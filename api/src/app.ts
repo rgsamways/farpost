@@ -3,6 +3,8 @@ import cors from "@fastify/cors";
 import { sql } from "drizzle-orm";
 import { authPlugin } from "./auth/fastify-plugin.js";
 import { db } from "./db/client.js";
+import { buildingsRoutes } from "./routes/buildings.js";
+import { assetsRoutes } from "./routes/assets.js";
 
 export function buildApp() {
   // trustProxy: Railway (and Cloudflare in front of it) terminate TLS at
@@ -16,9 +18,17 @@ export function buildApp() {
   fastify.register(cors, {
     origin: process.env.WEB_URL ?? false,
     credentials: true,
+    // @fastify/cors defaults to 'GET,HEAD,POST' — found live, not assumed,
+    // while browser-testing this change's own PATCH endpoint: a real
+    // preflight rejection ("Method PATCH is not allowed by
+    // Access-Control-Allow-Methods"), not a CORS config anyone had reason
+    // to touch before this was the first PATCH route in the codebase.
+    methods: ["GET", "POST", "PATCH"],
   });
 
   fastify.register(authPlugin);
+  fastify.register(buildingsRoutes);
+  fastify.register(assetsRoutes);
 
   fastify.get("/health", async (_request, reply) => {
     try {

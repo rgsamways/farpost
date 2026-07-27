@@ -38,6 +38,13 @@ const NAV_GROUPS: NavGroup[] = [
       { href: "/team", label: "Team" },
     ],
   },
+  {
+    // Intentionally just this one entry, not the full 11-feature nav the
+    // routing decision doc describes — that's separate future work once
+    // more features exist.
+    heading: "Features",
+    links: [{ href: "/features/systems-passport", label: "Systems Passport" }],
+  },
 ];
 
 function NavItem({

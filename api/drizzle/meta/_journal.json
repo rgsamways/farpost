@@ -50,6 +50,20 @@
       "when": 1785181913764,
       "tag": "0006_attach_job_updated_at_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785183509981,
+      "tag": "0007_checklist_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785183527303,
+      "tag": "0008_attach_checklist_template_updated_at_trigger",
+      "breakpoints": true
     }
   ]
 }

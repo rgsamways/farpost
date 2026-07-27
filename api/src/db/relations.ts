@@ -1,5 +1,10 @@
 import { relations } from "drizzle-orm";
+import { asset } from "./asset-schema.js";
 import { building } from "./building-schema.js";
+import { checklistResult } from "./checklist-result-schema.js";
+import { checklistRun } from "./checklist-run-schema.js";
+import { checklistTemplate } from "./checklist-template-schema.js";
+import { checklistTemplateItem } from "./checklist-template-item-schema.js";
 import { claim } from "./claim-schema.js";
 import { complianceRecord } from "./compliance-record-schema.js";
 import { dispatchCapability } from "./dispatch-capability-schema.js";
@@ -32,6 +37,7 @@ export const buildingRelations = relations(building, ({ one, many }) => ({
     references: [property.id],
   }),
   units: many(unit),
+  checklistRuns: many(checklistRun),
 }));
 
 export const unitRelations = relations(unit, ({ one }) => ({
@@ -55,6 +61,7 @@ export const membershipRelations = relations(membership, ({ one, many }) => ({
     references: [dispatchCapability.membershipId],
   }),
   complianceRecords: many(complianceRecord),
+  checklistRuns: many(checklistRun),
 }));
 
 export const professionalProfileRelations = relations(professionalProfile, ({ one }) => ({
@@ -137,4 +144,60 @@ export const claimRelations = relations(claim, ({ one }) => ({
     fields: [claim.buildingId],
     references: [building.id],
   }),
+}));
+
+// checklist_template <-> checklist_template_item (one-to-many), and
+// checklist_run <-> checklist_result (one-to-many), plus the plain FK
+// relations checklist_run -> building/membership/checklist_template and
+// checklist_result -> checklist_template_item/asset. None of these are
+// polymorphic — every one is a real, single-target FK — so all are wired
+// normally, same reasoning as `claimRelations` above.
+//
+// Deliberately NOT related: checklist_run/checklist_result to job/claim —
+// design.md's own Non-Goals name this exact omission. Neither design doc
+// ever states that relationship exists, so none is invented here.
+export const checklistTemplateRelations = relations(checklistTemplate, ({ many }) => ({
+  items: many(checklistTemplateItem),
+}));
+
+export const checklistTemplateItemRelations = relations(checklistTemplateItem, ({ one }) => ({
+  checklistTemplate: one(checklistTemplate, {
+    fields: [checklistTemplateItem.checklistTemplateId],
+    references: [checklistTemplate.id],
+  }),
+}));
+
+export const checklistRunRelations = relations(checklistRun, ({ one, many }) => ({
+  building: one(building, {
+    fields: [checklistRun.buildingId],
+    references: [building.id],
+  }),
+  membership: one(membership, {
+    fields: [checklistRun.membershipId],
+    references: [membership.id],
+  }),
+  checklistTemplate: one(checklistTemplate, {
+    fields: [checklistRun.checklistTemplateId],
+    references: [checklistTemplate.id],
+  }),
+  results: many(checklistResult),
+}));
+
+export const checklistResultRelations = relations(checklistResult, ({ one }) => ({
+  checklistRun: one(checklistRun, {
+    fields: [checklistResult.checklistRunId],
+    references: [checklistRun.id],
+  }),
+  checklistTemplateItem: one(checklistTemplateItem, {
+    fields: [checklistResult.checklistTemplateItemId],
+    references: [checklistTemplateItem.id],
+  }),
+  asset: one(asset, {
+    fields: [checklistResult.assetId],
+    references: [asset.id],
+  }),
+}));
+
+export const assetRelations = relations(asset, ({ many }) => ({
+  checklistResults: many(checklistResult),
 }));

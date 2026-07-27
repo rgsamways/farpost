@@ -22,6 +22,10 @@ export default defineConfig({
     "./src/db/job-cost-breakdown-schema.ts",
     "./src/db/work-request-attempt-schema.ts",
     "./src/db/claim-schema.ts",
+    "./src/db/checklist-template-schema.ts",
+    "./src/db/checklist-template-item-schema.ts",
+    "./src/db/checklist-run-schema.ts",
+    "./src/db/checklist-result-schema.ts",
   ],
   out: "./drizzle",
   dbCredentials: {

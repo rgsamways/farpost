@@ -19,6 +19,10 @@ import * as jobAttachmentSchema from "./job-attachment-schema.js";
 import * as jobCostBreakdownSchema from "./job-cost-breakdown-schema.js";
 import * as workRequestAttemptSchema from "./work-request-attempt-schema.js";
 import * as claimSchema from "./claim-schema.js";
+import * as checklistTemplateSchema from "./checklist-template-schema.js";
+import * as checklistTemplateItemSchema from "./checklist-template-item-schema.js";
+import * as checklistRunSchema from "./checklist-run-schema.js";
+import * as checklistResultSchema from "./checklist-result-schema.js";
 import * as relationsSchema from "./relations.js";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -42,6 +46,10 @@ export const schema = {
   ...jobCostBreakdownSchema,
   ...workRequestAttemptSchema,
   ...claimSchema,
+  ...checklistTemplateSchema,
+  ...checklistTemplateItemSchema,
+  ...checklistRunSchema,
+  ...checklistResultSchema,
   ...relationsSchema,
 };
 

@@ -32,6 +32,7 @@ export default defineConfig({
     "./src/db/fact-staleness-schema.ts",
     "./src/db/contribution-schema.ts",
     "./src/db/scout-visit-schema.ts",
+    "./src/db/billing-subscription-schema.ts",
   ],
   out: "./drizzle",
   dbCredentials: {

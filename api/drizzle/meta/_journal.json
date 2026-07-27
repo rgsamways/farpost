@@ -85,6 +85,13 @@
       "when": 1785190135556,
       "tag": "0011_building_provenance_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1785191713174,
+      "tag": "0012_billing_subscription_schema",
+      "breakpoints": true
     }
   ]
 }

@@ -29,6 +29,7 @@ import * as notificationSubscriptionSchema from "./notification-subscription-sch
 import * as factStalenessSchema from "./fact-staleness-schema.js";
 import * as contributionSchema from "./contribution-schema.js";
 import * as scoutVisitSchema from "./scout-visit-schema.js";
+import * as billingSubscriptionSchema from "./billing-subscription-schema.js";
 import * as relationsSchema from "./relations.js";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -62,6 +63,7 @@ export const schema = {
   ...factStalenessSchema,
   ...contributionSchema,
   ...scoutVisitSchema,
+  ...billingSubscriptionSchema,
   ...relationsSchema,
 };
 

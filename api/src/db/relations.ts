@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import { asset } from "./asset-schema.js";
+import { billingSubscription } from "./billing-subscription-schema.js";
 import { building } from "./building-schema.js";
 import { checklistResult } from "./checklist-result-schema.js";
 import { checklistRun } from "./checklist-run-schema.js";
@@ -22,6 +23,7 @@ import { professionalProfile } from "./professional-profile-schema.js";
 import { property } from "./property-schema.js";
 import { scoutVisit } from "./scout-visit-schema.js";
 import { unit } from "./unit-schema.js";
+import { user } from "./auth-schema.js";
 import { workRequestAttempt } from "./work-request-attempt-schema.js";
 
 // property <-> building <-> unit one-to-many chains, so query code can use
@@ -270,5 +272,17 @@ export const scoutVisitRelations = relations(scoutVisit, ({ one }) => ({
   membership: one(membership, {
     fields: [scoutVisit.membershipId],
     references: [membership.id],
+  }),
+}));
+
+// billing_subscription -> user only. `userRelations` (sessions/accounts)
+// already exists in auth-schema.ts; no `many(billingSubscription)` is
+// added there since no other user-referencing table in this schema
+// (event, stake, job, etc.) adds itself to `userRelations` either — this
+// one-directional relation matches that established pattern.
+export const billingSubscriptionRelations = relations(billingSubscription, ({ one }) => ({
+  user: one(user, {
+    fields: [billingSubscription.userId],
+    references: [user.id],
   }),
 }));

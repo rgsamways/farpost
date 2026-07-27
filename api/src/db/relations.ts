@@ -8,6 +8,8 @@ import { checklistTemplateItem } from "./checklist-template-item-schema.js";
 import { claim } from "./claim-schema.js";
 import { complianceRecord } from "./compliance-record-schema.js";
 import { dispatchCapability } from "./dispatch-capability-schema.js";
+import { event } from "./event-schema.js";
+import { eventRecipient } from "./event-recipient-schema.js";
 import { job } from "./job-schema.js";
 import { jobAttachment } from "./job-attachment-schema.js";
 import { jobCostBreakdown } from "./job-cost-breakdown-schema.js";
@@ -200,4 +202,19 @@ export const checklistResultRelations = relations(checklistResult, ({ one }) => 
 
 export const assetRelations = relations(asset, ({ many }) => ({
   checklistResults: many(checklistResult),
+}));
+
+// event <-> event_recipient (one-to-many). `event.subjectType`/`subjectId`
+// is deliberately NOT related here — see the comment on event-schema.ts
+// (same poly pattern as asset/stake/job: the target table depends on
+// subjectType and is resolved at the application layer, not via a real FK).
+export const eventRelations = relations(event, ({ many }) => ({
+  recipients: many(eventRecipient),
+}));
+
+export const eventRecipientRelations = relations(eventRecipient, ({ one }) => ({
+  event: one(event, {
+    fields: [eventRecipient.eventId],
+    references: [event.id],
+  }),
 }));

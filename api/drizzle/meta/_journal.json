@@ -64,6 +64,13 @@
       "when": 1785183527303,
       "tag": "0008_attach_checklist_template_updated_at_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785184882336,
+      "tag": "0009_event_log_schema",
+      "breakpoints": true
     }
   ]
 }

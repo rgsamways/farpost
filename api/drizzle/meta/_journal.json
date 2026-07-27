@@ -78,6 +78,13 @@
       "when": 1785188198459,
       "tag": "0010_notification_subscription",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1785190135556,
+      "tag": "0011_building_provenance_schema",
+      "breakpoints": true
     }
   ]
 }

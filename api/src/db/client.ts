@@ -26,6 +26,9 @@ import * as checklistResultSchema from "./checklist-result-schema.js";
 import * as eventSchema from "./event-schema.js";
 import * as eventRecipientSchema from "./event-recipient-schema.js";
 import * as notificationSubscriptionSchema from "./notification-subscription-schema.js";
+import * as factStalenessSchema from "./fact-staleness-schema.js";
+import * as contributionSchema from "./contribution-schema.js";
+import * as scoutVisitSchema from "./scout-visit-schema.js";
 import * as relationsSchema from "./relations.js";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -56,6 +59,9 @@ export const schema = {
   ...eventSchema,
   ...eventRecipientSchema,
   ...notificationSubscriptionSchema,
+  ...factStalenessSchema,
+  ...contributionSchema,
+  ...scoutVisitSchema,
   ...relationsSchema,
 };
 

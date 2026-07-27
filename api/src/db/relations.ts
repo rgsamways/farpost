@@ -7,9 +7,11 @@ import { checklistTemplate } from "./checklist-template-schema.js";
 import { checklistTemplateItem } from "./checklist-template-item-schema.js";
 import { claim } from "./claim-schema.js";
 import { complianceRecord } from "./compliance-record-schema.js";
+import { contribution } from "./contribution-schema.js";
 import { dispatchCapability } from "./dispatch-capability-schema.js";
 import { event } from "./event-schema.js";
 import { eventRecipient } from "./event-recipient-schema.js";
+import { factStaleness } from "./fact-staleness-schema.js";
 import { job } from "./job-schema.js";
 import { jobAttachment } from "./job-attachment-schema.js";
 import { jobCostBreakdown } from "./job-cost-breakdown-schema.js";
@@ -18,6 +20,7 @@ import { membership } from "./membership-schema.js";
 import { notificationSubscription } from "./notification-subscription-schema.js";
 import { professionalProfile } from "./professional-profile-schema.js";
 import { property } from "./property-schema.js";
+import { scoutVisit } from "./scout-visit-schema.js";
 import { unit } from "./unit-schema.js";
 import { workRequestAttempt } from "./work-request-attempt-schema.js";
 
@@ -41,6 +44,9 @@ export const buildingRelations = relations(building, ({ one, many }) => ({
   }),
   units: many(unit),
   checklistRuns: many(checklistRun),
+  factStalenesses: many(factStaleness),
+  contributions: many(contribution),
+  scoutVisits: many(scoutVisit),
 }));
 
 export const unitRelations = relations(unit, ({ one }) => ({
@@ -66,6 +72,8 @@ export const membershipRelations = relations(membership, ({ one, many }) => ({
   complianceRecords: many(complianceRecord),
   checklistRuns: many(checklistRun),
   notificationSubscriptions: many(notificationSubscription),
+  contributions: many(contribution),
+  scoutVisits: many(scoutVisit),
 }));
 
 export const professionalProfileRelations = relations(professionalProfile, ({ one }) => ({
@@ -229,6 +237,38 @@ export const eventRecipientRelations = relations(eventRecipient, ({ one }) => ({
 export const notificationSubscriptionRelations = relations(notificationSubscription, ({ one }) => ({
   membership: one(membership, {
     fields: [notificationSubscription.membershipId],
+    references: [membership.id],
+  }),
+}));
+
+// fact_staleness/contribution/scout_visit -> building (+ membership for
+// the latter two). All real, single-target FKs — wired normally, same
+// reasoning as claimRelations/checklistResultRelations above.
+export const factStalenessRelations = relations(factStaleness, ({ one }) => ({
+  building: one(building, {
+    fields: [factStaleness.buildingId],
+    references: [building.id],
+  }),
+}));
+
+export const contributionRelations = relations(contribution, ({ one }) => ({
+  building: one(building, {
+    fields: [contribution.buildingId],
+    references: [building.id],
+  }),
+  membership: one(membership, {
+    fields: [contribution.membershipId],
+    references: [membership.id],
+  }),
+}));
+
+export const scoutVisitRelations = relations(scoutVisit, ({ one }) => ({
+  building: one(building, {
+    fields: [scoutVisit.buildingId],
+    references: [building.id],
+  }),
+  membership: one(membership, {
+    fields: [scoutVisit.membershipId],
     references: [membership.id],
   }),
 }));

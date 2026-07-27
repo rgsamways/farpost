@@ -151,3 +151,11 @@ The second half matters just as much as the first: who gets told isn't one share
 One honest, small thing worth naming: while building this, a real mismatch turned up between an early planning note and how a person's account is actually stored in the database — the note assumed one column type, the real column is a different (also fine) one. It got caught and corrected before it could become a bug nobody would understand months from now, in exactly the way this whole process is meant to catch it.
 
 Like the other schema work today, nothing about this is visible on screen yet. But it's what every future notification — an email, an in-app alert, an activity feed — will eventually be built on top of.
+
+### 2026-07-27 — Deciding who should hear about it
+
+Same day, the last piece: a real place to write down "notify this person when this kind of thing happens." That's separate from the record of the event itself, and separate from tracking who's actually been told — this is the standing preference, set once and reused every time a matching event happens from then on. A homeowner can say "tell me about anything involving my building." A contractor can say "tell me about new jobs in this postal code." An adjuster can say "tell me about every claim, anywhere" — genuinely global, not scoped to one place.
+
+That third case is worth calling out honestly: checking how the very first version of Farpost actually worked in production turned up a real, useful fact — a notification "channel" field (email vs. text vs. in-app) had existed there the whole time, but nothing ever actually used it. Every real notification that ever went out was hardcoded to one specific method, completely disconnected from that setting. The new version keeps a place for that preference to live, honestly, without pretending it already does something it doesn't — the actual multi-channel delivery is still a real piece of work still ahead, not quietly implied as already done.
+
+Nothing about this is visible yet, same as the rest of today's foundation work. But between this and the event record before it, the two real pieces a future "you've got something new to look at" feature needs are both now in place.

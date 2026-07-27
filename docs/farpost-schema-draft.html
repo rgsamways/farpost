@@ -219,6 +219,20 @@
   or left as an open question.
 </div>
 
+<div class="callout resolved">
+  <strong>SUPERSEDED, 2026-07-27, for BUILDING/PROPERTY/ASSET/STAKE.</strong> Those four entities
+  never actually got the fresh-eyes pass this doc's own changelog and "open questions" section
+  show happening for <code>Job</code>/<code>Claim</code>/<code>ProfessionalProfile</code> — they
+  sat here unquestioned. <code>docs/core-building-model.md</code> is that pass, closed out with
+  Robin directly: adds a real <code>Unit</code> tier between <code>Building</code> and
+  <code>Asset</code>, makes <code>Asset</code> polymorphic (property/building/unit, not just
+  <code>building_id</code>), removes <code>Building.owner_name/owner_email/owner_phone</code> in
+  favor of <code>Stake</code>'s own <code>contact_snapshot</code>/<code>unclaimed</code> pattern,
+  and adds paired type+age fields for roof/foundation/electrical/plumbing/heating. Everything
+  else on this page (Membership, Job, Claim, ProfessionalProfile, billing, engine linkage) is
+  untouched and still current. Left in place as historical record, not deleted.
+</div>
+
 <h2>Legend</h2>
 <p class="legend">
   Mermaid ER notation: <code>||</code> = exactly one, <code>o{</code> = zero-or-many,

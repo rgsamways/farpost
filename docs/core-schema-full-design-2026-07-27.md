@@ -316,7 +316,7 @@ into this schema's own established patterns rather than copied from the old Mong
 |---|---|---|
 | `id` | uuid PK | |
 | `event_type` | text | e.g. `"CLAIM.SUBMITTED"`, `"INSPECTION.COMPLETED"`. |
-| `actor_user_id` | uuid FK → User, nullable | Null means a system-generated event. The old model's `actor_id` was a raw string (professional slug, claim id, or `"system"`) — a real FK is correct here since the actor, when there is one, is always a platform User. |
+| `actor_user_id` | text FK → User, nullable | Null means a system-generated event. The old model's `actor_id` was a raw string (professional slug, claim id, or `"system"`) — a real FK is correct here since the actor, when there is one, is always a platform User. **Corrected 2026-07-27, `event-log-schema`:** this table was originally typed `uuid` here; checked against the actual built `user` table (`api/src/db/auth-schema.ts`) and confirmed `user.id` is `text` (better-auth's own convention), matching every other user-referencing column already built. Doc corrected to match reality. |
 | `actor_role` | text, nullable | Denormalized cache of the actor's role at event time — avoids a join on every read; accepted as a deliberate, cheap drift risk. |
 | `subject_type` / `subject_id` | text / uuid (poly) | Replaces the old model's three separate nullable columns (`building_slug`/`claim_id`/`professional_slug`) with the same polymorphic pair every other cross-cutting table already uses. |
 | `payload` | jsonb | Event-specific context. |
@@ -335,7 +335,7 @@ duplicate-delivery bug ever actually happens, not speculatively.
 |---|---|---|
 | `id` | uuid PK | |
 | `event_id` | uuid FK → Event | |
-| `recipient_user_id` | uuid FK → User | |
+| `recipient_user_id` | text FK → User | Corrected 2026-07-27, `event-log-schema` — same `uuid`→`text` fix as `Event.actor_user_id` above. |
 | `recipient_role` | text | Denormalized, same reasoning as `Event.actor_role`. |
 | `reason` | text, nullable | e.g. `"building_owner"`, `"assigned_inspector"` — replaces the old model's inline `relevance` list. |
 | `read_at` | timestamptz, nullable | Replaces the old model's single global `read_by_admin` boolean — read state is inherently per-recipient, not per-event. |

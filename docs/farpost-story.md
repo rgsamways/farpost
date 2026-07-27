@@ -98,3 +98,28 @@ Nothing about how a person actually uses this yet, though — there's no sign-in
 The screen came next, same day. There's now an actual page to sign in on, and an actual account page to land on afterward, showing the real email address of whoever's signed in and a real button to sign back out. The header's account icon — on both phone and desktop now, matching each other for the first time — genuinely changes to reflect whether you're signed in, live.
 
 Real end-to-end testing found a real bug before anyone else could: the link in the email was landing in the wrong place, one address instead of another, because the address it pointed to needed to be spelled out in full rather than left partial. It was fixed by testing the actual link, in an actual inbox, rather than trusting that the plan on paper was correct — the exact discipline this whole process depends on, working as intended.
+
+### 2026-07-27 — Live, on real domains
+
+Farpost is now actually reachable on the internet, at the real domains it's always meant to live at: `farpost.ca` and `api.farpost.ca`. Not a test environment, not a preview link — the real thing, replacing an older version of Farpost that had been quietly running on the same two services since before this rebuild started.
+
+This is worth being honest about, because it wasn't a clean, one-click switch, and pretending it was would defeat the whole point of writing this document. Three separate, real problems showed up, one at a time, each with its own real cause:
+
+- The hosting platform's connection to "which code should I build" had to be repointed from the old codebase to the new one — and the first attempt at that silently didn't take, so it kept rebuilding the old version even though the settings looked right on screen. Caught by checking what was actually running, not just what a screen claimed, and fixed by redoing it more carefully.
+- Once it was building the right code, the build itself failed — a mismatch between the version of the tools used to write the project locally and the version the hosting platform assumed by default. Fixed by being explicit about which version to use, rather than letting it guess.
+- Once that was fixed, the app started up successfully but still couldn't be reached — the hosting platform was still listening on a numbered address left over from the old version, not the one the new app actually used. Found and fixed directly, not guessed at.
+
+None of these were mysterious once looked at properly — each one had a real, checkable cause, and each got fixed by actually looking rather than assuming. The last step was the one that mattered most: signing in for real, on the real domain, and confirming a real session actually carries over correctly between the two separate addresses (`farpost.ca` and `api.farpost.ca`) that make up the whole system — the exact thing that only worked by accident during local development, now confirmed to work for real reasons instead.
+
+### 2026-07-27 — The building itself becomes real data
+
+Everything so far has been about the platform's frame — the screens, the sign-in, the server. Today the first piece of what Farpost is actually *for* landed: a real database structure for the things Farpost tracks — a property (the land), a building on it, individual units inside a building for places with more than one occupant, the trackable equipment/systems inside them (a roof, a furnace, a water heater), and the record of who has a real stake in any of that — an owner, a tenant, a professional relationship.
+
+Two ideas worth explaining plainly, because they shape everything built on top of this from now on:
+
+- **A building's owner isn't stored as three plain text fields on the building itself.** That sounds like a strange thing to call out, but it's a deliberate fix for a real bug the previous version of Farpost actually had — the same fact (who owns this place) ending up represented in more than one spot, with no guarantee those spots agree with each other. Instead, ownership lives in its own dedicated record — one that can represent a building nobody's claimed yet just as cleanly as one with a fully verified owner, and that carries a real trust level: is this a name someone typed in about a building they don't yet control, or a verified claim that's gone through a real check?
+- **Equipment isn't locked to "must belong to a building."** A well or a septic system can belong to the land itself, with no building involved at all — so the record for a piece of equipment can point at a property, a building, or a unit, whichever is actually true for that item, rather than forcing every case into the same shape.
+
+Two real, honest snags came up while building this, worth naming rather than glossing over: the database software this runs on didn't actually have the mapping-and-location extension it needed installed at all — not just switched off — so that had to be added before anything with a real-world location could be stored; and the tool that generates the technical database instructions had a genuine bug in it, writing an invalid instruction for exactly the kind of location column this feature needed, caught and hand-corrected before it could cause a silent failure later.
+
+Nothing about this is visible yet — there's still no screen where any of this shows up. But it's the actual foundation the near-term features (a simple digital record of what's in your home, a maintenance timeline, seasonal reminders) will be built directly on top of, not a placeholder for it.

@@ -36,6 +36,20 @@
       "when": 1785177535956,
       "tag": "0004_attach_building_updated_at_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1785181885543,
+      "tag": "0005_job_dispatch_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785181913764,
+      "tag": "0006_attach_job_updated_at_trigger",
+      "breakpoints": true
     }
   ]
 }

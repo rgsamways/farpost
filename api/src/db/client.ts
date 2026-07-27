@@ -10,6 +10,15 @@ import * as buildingSchema from "./building-schema.js";
 import * as unitSchema from "./unit-schema.js";
 import * as assetSchema from "./asset-schema.js";
 import * as stakeSchema from "./stake-schema.js";
+import * as professionalProfileSchema from "./professional-profile-schema.js";
+import * as dispatchCapabilitySchema from "./dispatch-capability-schema.js";
+import * as complianceRecordSchema from "./compliance-record-schema.js";
+import * as jobSchema from "./job-schema.js";
+import * as jobNotesSchema from "./job-notes-schema.js";
+import * as jobAttachmentSchema from "./job-attachment-schema.js";
+import * as jobCostBreakdownSchema from "./job-cost-breakdown-schema.js";
+import * as workRequestAttemptSchema from "./work-request-attempt-schema.js";
+import * as claimSchema from "./claim-schema.js";
 import * as relationsSchema from "./relations.js";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -24,6 +33,15 @@ export const schema = {
   ...unitSchema,
   ...assetSchema,
   ...stakeSchema,
+  ...professionalProfileSchema,
+  ...dispatchCapabilitySchema,
+  ...complianceRecordSchema,
+  ...jobSchema,
+  ...jobNotesSchema,
+  ...jobAttachmentSchema,
+  ...jobCostBreakdownSchema,
+  ...workRequestAttemptSchema,
+  ...claimSchema,
   ...relationsSchema,
 };
 

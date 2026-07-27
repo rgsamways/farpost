@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Farpost rebuild — draft relational schema (first pass)</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+<style>
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    max-width: 1100px;
+    margin: 2rem auto;
+    padding: 0 1.5rem 4rem;
+    line-height: 1.55;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+  h2 { margin-top: 2.5rem; border-bottom: 2px solid #ddd; padding-bottom: 0.25rem; }
+  h3 { margin-top: 1.5rem; }
+  .subtitle { color: #666; margin-top: 0; }
+  .callout {
+    background: #fff8e6;
+    border-left: 4px solid #e0a800;
+    padding: 0.75rem 1rem;
+    margin: 1rem 0;
+  }
+  .callout.opinion { background: #eef4ff; border-left-color: #3b6fd6; }
+  .callout.resolved { background: #eefbf0; border-left-color: #2e9e50; }
+  code { background: #f2f2f2; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.92em; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
+  th, td { border: 1px solid #ddd; padding: 0.4rem 0.6rem; text-align: left; vertical-align: top; }
+  th { background: #f5f5f5; }
+  .diagram-wrap {
+    overflow: hidden;
+    position: relative;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 1rem;
+    background: #fafafa;
+    margin: 1.5rem 0;
+    height: 82vh;
+  }
+  .diagram-wrap svg {
+    max-width: none !important;
+  }
+  .fit-btn {
+    display: inline-block;
+    margin: 0 0 0.75rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    border: 1px solid #999;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+  }
+  .fit-btn:hover { background: #f0f0f0; }
+  .legend { font-size: 0.9rem; color: #555; }
+  ul.tight li { margin-bottom: 0.4rem; }
+  .version-badge {
+    display: inline-block;
+    font-family: monospace;
+    font-size: 0.85rem;
+    background: #222;
+    color: #fff;
+    padding: 0.25rem 0.6rem;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+  }
+  details.changelog {
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 0.6rem 1rem;
+    background: #fafafa;
+  }
+  details.changelog summary { cursor: pointer; font-weight: 600; }
+  details.changelog ul { margin: 0.6rem 0 0.2rem; }
+  details.changelog li { margin-bottom: 0.3rem; }
+  .rel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+    margin: 1.5rem 0;
+  }
+  .rel-card {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 0.75rem;
+    background: #fff;
+  }
+  .rel-card h4 { margin: 0 0 0.5rem; font-size: 0.95rem; }
+  .rel-card .mermaid { display: flex; justify-content: center; }
+  .rel-card svg { max-width: 100% !important; height: auto !important; }
+  .rel-card p {
+    margin: 0.5rem 0 0;
+    font-size: 0.82rem;
+    color: #555;
+    line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+
+<h1>Farpost rebuild — draft relational schema (first pass)</h1>
+<div class="version-badge">Draft v19 — 2026-07-25</div>
+<details class="changelog">
+  <summary>What changed, most recent first (click to expand)</summary>
+  <ul>
+    <li><strong>v19</strong> — Fixed four real inconsistencies caught by Farpost's own review:
+      demoted <code>PROFESSIONAL_PROFILE</code>'s <code>brokerage</code>/<code>office</code>/<code>region</code>
+      back into <code>extra</code> (they'd been promoted inconsistently vs. the other 7 roles' equally
+      trivial fields, contradicting this doc's own open question); fixed <code>STAKE.subject_id</code>
+      from <code>text</code> to <code>uuid</code> to match <code>Job</code>/<code>FulfillmentFee</code>'s
+      already-<code>uuid</code> version of the same polymorphic pattern; redrew
+      <code>Job</code>↔<code>FulfillmentFee</code> as polymorphic (<code>subject_type=job</code>)
+      instead of a solid FK line that didn't match <code>FulfillmentFee</code>'s actual field list
+      (no <code>job_id</code> column existed), and added the missing <code>User</code>↔<code>FulfillmentFee</code>
+      "pays" line; added an explicit citation + reconfirmation flag on
+      <code>BILLING_SUBSCRIPTION</code>'s $12/year framing, since it's a real robinsamways.ca-side
+      decision (<code>core-billing-model.md</code>, 2026-07-24) that a fresh Farpost-side read
+      couldn't independently verify.</li>
+    <li><strong>v18</strong> — Resolved the admin/owner conflict-of-interest item: no technical
+      restriction for now (no real second admin exists yet to create the conflict), rely on existing
+      audit logging for after-the-fact visibility, a UI ownership-interest banner floated as a
+      lightweight future middle option, full recusal logic deferred until it's actually needed.</li>
+    <li><strong>v17</strong> — Applied Farpost's real findings from all 10 role models plus
+      <code>claim_repository.py</code>: 9 roles consolidate cleanly into
+      <code>PROFESSIONAL_PROFILE</code>; Contractor's real complexity (dispatch geography, compliance
+      credentials, a status enum) got generalized — not given its own table, per Robin's direct
+      override of that recommendation — into expanded <code>DISPATCH_CAPABILITY</code> fields, a new
+      cross-role <code>COMPLIANCE_RECORD</code> table, and a <code>pending</code> value on
+      <code>Membership.status</code>. <code>Claim</code> now has its own independent identity instead
+      of extending <code>Job</code> 1:1 — any number of Jobs can reference one Claim via
+      <code>subject_type = "claim"</code>, the same polymorphism <code>Stake</code> already uses.
+      PostGIS confirmed as SRID 4326 + GiST. Three of four open questions closed out.</li>
+    <li><strong>v16</strong> — Fixed the actual root cause of the "Syntax error in text" bombs: every
+      multi-attribute entity in the 25 relationship-reference diagrams had its fields comma-separated
+      on one line (<code>JOB { uuid id PK, text foo }</code>), which Mermaid's <code>erDiagram</code>
+      doesn't support — it requires one attribute per line. The two diagrams that happened to have only
+      a single field each rendered fine, which is what made this look intermittent rather than
+      systemic. Rewrote all 25 to multi-line syntax, matching the main diagram's own format. Also added
+      <code>suppressErrors: true</code> plus a <code>.catch()</code> to the render call so one bad
+      diagram in the future renders its own inline error instead of silently breaking the main
+      diagram's zoom/pan setup too.</li>
+    <li><strong>v15</strong> — Fixed a real bug from v14: the Mermaid render script sat in the middle
+      of the page and ran while the browser was still parsing, before the 25 new relationship-reference
+      diagrams further down even existed in the DOM — so they never got rendered at all and showed as
+      raw, overlapping text instead of diagrams. Moved the script to the very end of the page so it
+      runs only after every diagram block has actually been parsed.</li>
+    <li><strong>v14</strong> — Added a "Relationship reference" section: the same schema broken into
+      25 small, focused diagrams (2-4 tables each), one per relationship path, with a plain-language
+      caption under each — a companion to the big diagram, not a replacement for it.</li>
+    <li><strong>v13</strong> — Generalized <code>JOB_PHOTO</code> into <code>JOB_ATTACHMENT</code>
+      (free-text <code>doc_type</code>: photo, deed, staging agreement, invoice, etc.) after
+      confirming <code>Claim</code> is not a privileged concept — it's one extension table among a
+      potentially unbounded number, kept only because real code already backs its fields. Most jobs
+      (a staging request, a mortgage referral, a documentation shoot) need no extension table at all,
+      just loose attachments.</li>
+    <li><strong>v12</strong> — Fixed <code>Job.status</code>'s vocabulary after checking it against the
+      real <code>ClaimStatus</code>/<code>JobStatus</code> enums: added a missing pre-dispatch
+      <code>pending</code> state, removed <code>declined</code>/<code>timeout</code> (redundant with
+      <code>WORK_REQUEST_ATTEMPT</code>'s per-attempt <code>response</code>), added a genuine terminal
+      <code>exhausted</code> state for "every candidate tried, giving up." <code>Claim.closed_at</code>
+      confirmed correct as a separate claim-specific event, unchanged.</li>
+    <li><strong>v11</strong> — Generalized <code>Job</code> itself past claim-dispatch, one level
+      deeper than v10: <code>Job</code> is now a generic person-to-person request
+      (<code>requester_user_id</code>/<code>target_role</code>/<code>assignee_user_id</code>/
+      <code>subject_type</code>+<code>subject_id</code>/<code>description</code>), the third instance
+      of the recurring "who, in what relationship, to what" pattern alongside
+      <code>Membership</code> and <code>Stake</code>. Retired <code>INSPECTION_REQUEST</code> (now
+      just an ordinary <code>Job</code>); flipped <code>Claim</code> from wrapping <code>Job</code> to
+      extending it (<code>CLAIM.job_id</code> is now its primary key); simplified
+      <code>WORK_REQUEST_ATTEMPT</code> to reference <code>job_id</code> directly instead of
+      polymorphic <code>request_type</code>/<code>request_id</code>; renamed <code>JOB_NOTES</code>'
+      fields off "adjuster"/"contractor" to <code>requester_notes</code>/<code>assignee_notes</code>.</li>
+    <li><strong>v10</strong> — Un-privileged dispatch: pulled <code>dispatch_*</code> fields out of
+      <code>PROFESSIONAL_PROFILE</code> into a new attachable <code>DISPATCH_CAPABILITY</code> table;
+      moved dispatch-attempt fields out of <code>JOB</code> into a new polymorphic
+      <code>WORK_REQUEST_ATTEMPT</code> table (matching Farpost's real, already-shipped "dispatch
+      unification"); added the previously-missing <code>INSPECTION_REQUEST</code> entity as a sibling
+      to <code>CLAIM</code>, billing through the same <code>FULFILLMENT_FEE</code> pattern.</li>
+    <li><strong>v9</strong> — Added this version badge + changelog so a page refresh is unambiguous.</li>
+    <li><strong>v8</strong> — Corrected <code>BuildingOwner</code>'s target: folds into
+      <code>Membership</code> (<code>role: "owner"</code>), not <code>Stake</code> as first guessed;
+      moved it into "already settled"; added the admin/owner conflict-of-interest open item.</li>
+    <li><strong>v7</strong> — Added the "Worked example" section (owner + professional + admin on the
+      same user, using the diagram controls' 325 McGarry Rd discussion).</li>
+    <li><strong>v6</strong> — Corrected "Scout": confirmed by Farpost's own session as needing zero
+      special-casing (real 2026-07-12/13 history), moved from an open question to "already settled."</li>
+    <li><strong>v5</strong> — Added the missing <code>membership_id</code> field to
+      <code>SCOUT_VISIT</code> (who performed the visit) after walking through a real example.</li>
+    <li><strong>v4</strong> — Fixed a Mermaid + svg-pan-zoom initialization timing bug that clipped
+      most of the diagram off-screen; added a manual "Fit to screen" button as a backstop.</li>
+    <li><strong>v3</strong> — Added svg-pan-zoom so the ~26-entity diagram can be zoomed/panned/fit to
+      screen instead of only scrolled at native size.</li>
+    <li><strong>v2</strong> — Fixed invalid Mermaid key syntax (a non-standard combined annotation →
+      <code>PK,FK</code>) on the three 1:1 extension tables.</li>
+    <li><strong>v1</strong> — Initial draft: full ER diagram grounded in Farpost's real Mongo models,
+      plus the "already settled" / "my inferences" / "open questions" sections.</li>
+  </ul>
+</details>
+<p class="subtitle">
+  Written from robinsamways.ca's Chat session, 2026-07-25. Design-only — no code in either repo.
+  Grounded in the <em>real, current</em> Mongo/Beanie models read directly from
+  <code>c:\dev\farpost\farpost-api\app\models\</code> (not guessed), reorganized around the
+  already-resolved <code>Membership</code> design in <code>docs/core-user-model.md</code> and the
+  billing shapes in <code>docs/core-billing-model.md</code>. This is a Postgres target shape for
+  the from-scratch rebuild — none of the current Mongo documents' field layouts are meant to survive
+  as-is, only the domain concepts they represent.
+</p>
+
+<div class="callout">
+  <strong>This is a first pass, not a decision.</strong> It needs Farpost's own Chat session's
+  domain knowledge and sign-off before anything gets built, same relay pattern that resolved
+  <code>core-user-model.md</code>'s open questions. Sections below are flagged
+  <span style="color:#2e9e50;">resolved</span> (already decided elsewhere, just applied here),
+  <span style="color:#3b6fd6;">my inference/opinion</span> (a reasonable first guess, not confirmed),
+  or left as an open question.
+</div>
+
+<h2>Legend</h2>
+<p class="legend">
+  Mermaid ER notation: <code>||</code> = exactly one, <code>o{</code> = zero-or-many,
+  <code>o|</code> = zero-or-one, <code>}|</code> = one-or-many. PK/FK annotations appear next to
+  each attribute inside its table box.
+</p>
+<p class="legend">
+  <strong>Diagram controls:</strong> scroll/pinch to zoom, click-and-drag to pan, use the
+  +/&minus;/reset icons in the diagram's bottom-left corner — reset re-fits every table on screen
+  at once.
+</p>
+
+<h2>Entity-relationship diagram</h2>
+<button class="fit-btn" onclick="fitDiagram()">Fit to screen</button>
+<div class="diagram-wrap">
+<pre class="mermaid">
+erDiagram
+    USER {
+        text id PK
+        text email
+        text name
+        text phone
+        boolean email_verified
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    MEMBERSHIP {
+        uuid id PK
+        text user_id FK
+        text role
+        text status "pending, active, suspended, or revoked"
+        timestamptz granted_at
+        timestamptz revoked_at
+        jsonb metadata
+    }
+
+    PROFESSIONAL_PROFILE {
+        uuid membership_id PK,FK
+        text first_name
+        text last_name
+        text company
+        text slug
+        text phone
+        text service_area
+        jsonb visibility
+        text stripe_customer_id
+        boolean underwriting_digest_enabled
+        jsonb extra "role-specific scalars — brokerage, licence numbers, designations, ... — pending the open naming decision below"
+    }
+
+    DISPATCH_CAPABILITY {
+        uuid membership_id PK,FK
+        boolean eligible
+        numeric base_lat
+        numeric base_lng
+        numeric service_radius_km
+        text_array service_postal_prefixes
+        integer max_drive_minutes
+        text_array capabilities
+        integer capacity_current
+        integer capacity_max
+    }
+
+    COMPLIANCE_RECORD {
+        uuid id PK
+        uuid membership_id FK
+        text credential_type
+        text reference_number
+        date expiry_date
+        text status
+        timestamptz created_at
+    }
+
+    WORK_REQUEST_ATTEMPT {
+        uuid id PK
+        uuid job_id FK
+        uuid candidate_user_id FK
+        integer attempt_number
+        timestamptz dispatched_at
+        timestamptz timeout_at
+        timestamptz responded_at
+        text response "accepted, declined, or timeout — per-attempt outcome"
+    }
+
+    ROLE_TYPE {
+        text key PK
+        text display_name
+        text tier
+        text status
+        text privacy_default
+        boolean reputation_eligible
+        text_array default_subscriptions
+        text copy_template_ref
+        text hub_config
+        text source
+        timestamptz created_at
+        timestamptz promoted_at
+        text curator_id
+    }
+
+    STAKE {
+        uuid id PK
+        text user_id FK
+        text subject_type
+        uuid subject_id
+        text role
+        text kind
+        text status
+        numeric weight
+        text verification_method
+        jsonb contact_snapshot
+        timestamptz verified_at
+        date renewal_date
+        timestamptz renewal_reminder_sent_at
+        timestamptz established_at
+        timestamptz ended_at
+    }
+
+    BUILDING {
+        uuid id PK
+        text slug
+        uuid property_id FK
+        text nfc_tag_id
+        text address
+        text postal_code
+        text postal_prefix
+        numeric lat
+        numeric lng
+        geography location
+        text building_type
+        text acquisition_channel
+        text status
+        text owner_name
+        text owner_email
+        text owner_phone
+        timestamptz activated_at
+        integer activation_count
+        text neighbourhood_notes
+        text roof_type
+        text electrical_type
+        text foundation_type
+        text plumbing_type
+        text heating_type
+        integer year_built
+        jsonb owner_controls
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    PROPERTY {
+        uuid id PK
+        text slug
+        jsonb external_ids
+        text address
+        geography boundary
+        timestamptz created_at
+    }
+
+    SCOUT_VISIT {
+        uuid id PK
+        uuid building_id FK
+        uuid membership_id FK
+        text_array photo_urls
+        text notes
+        timestamptz visited_at
+    }
+
+    CONTRIBUTION {
+        uuid id PK
+        uuid building_id FK
+        uuid membership_id FK
+        text category
+        jsonb payload
+        timestamptz created_at
+    }
+
+    FACT_STALENESS {
+        uuid id PK
+        uuid building_id FK
+        text category
+        date last_documented_at
+        integer half_life_months
+        date next_stale_at
+        timestamptz notified_at
+    }
+
+    ASSET {
+        uuid id PK
+        uuid building_id FK
+        text asset_id
+        text asset_type
+        text label
+        date installed_date
+        text_array photos
+        text_array condition_notes
+        jsonb compliance
+        timestamptz created_at
+    }
+
+    CLAIM {
+        uuid id PK
+        uuid building_id FK
+        text insurer_file_number
+        text property_postal_code
+        text property_type
+        text property_address
+        text site_contact_name
+        text site_contact_phone
+        geography coordinates
+        text_array damage_types
+        text urgency
+        integer response_window_hours
+        boolean repeat_property
+        integer prior_claims_at_address
+        timestamptz closed_at
+    }
+
+    JOB {
+        uuid id PK
+        uuid requester_user_id FK
+        text target_role
+        uuid assignee_user_id FK
+        text subject_type
+        uuid subject_id
+        text description
+        timestamptz accepted_at
+        timestamptz arrived_at
+        timestamptz completed_at
+        timestamptz approved_at
+        text scope_notes
+        text report_url
+        text status "pending, dispatched, accepted, in_progress, documented, approved, paid, or exhausted"
+        jsonb metadata
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    JOB_ATTACHMENT {
+        uuid id PK
+        uuid job_id FK
+        text doc_type "free text — photo, deed, staging_agreement, invoice, proof_of_income, ..."
+        text label
+        text url
+        timestamptz uploaded_at
+    }
+
+    JOB_COST_BREAKDOWN {
+        uuid job_id PK,FK
+        numeric labour_hours
+        numeric labour_rate
+        numeric materials
+        numeric equipment
+        numeric travel
+        numeric total
+        text measurement_notes
+    }
+
+    JOB_NOTES {
+        uuid job_id PK,FK
+        text requester_notes
+        text assignee_notes
+    }
+
+    CHECKLIST_RUN {
+        uuid id PK
+        uuid building_id FK
+        uuid membership_id FK
+        timestamptz completed_at
+        text sequence_id
+        timestamptz created_at
+    }
+
+    CHECKLIST_RESULT {
+        uuid id PK
+        uuid checklist_run_id FK
+        uuid asset_id FK
+        boolean passed
+        text notes
+    }
+
+    NOTIFICATION_SUBSCRIPTION {
+        uuid id PK
+        uuid membership_id FK
+        text event_type
+        text anchor_type
+        text anchor_value
+        text_array channels
+        boolean active
+        timestamptz created_at
+    }
+
+    PRODUCT_FEEDBACK {
+        uuid id PK
+        uuid membership_id FK
+        text role
+        text feature_key
+        jsonb responses
+        text free_text_raw
+        jsonb free_text_normalized
+        boolean dismissed
+        timestamptz created_at
+    }
+
+    PRODUCT_FEEDBACK_INSIGHT {
+        uuid id PK
+        text feature_key
+        text role
+        timestamptz period_start
+        timestamptz period_end
+        integer response_count
+        numeric dismiss_rate
+        numeric friction_score
+        numeric engagement_score
+        text_array top_issues
+        text plain_summary
+        timestamptz computed_at
+    }
+
+    BILLING_SUBSCRIPTION {
+        uuid id PK
+        text user_id FK
+        text plan
+        integer period_number
+        integer period_charged_cents
+        timestamptz current_period_start
+        timestamptz current_period_end
+        text status
+        boolean cancel_at_period_end
+        timestamptz created_at
+    }
+
+    FULFILLMENT_FEE {
+        uuid id PK
+        text subject_type
+        uuid subject_id
+        text payer_id FK
+        integer fee_cents
+        text invoice_id
+        timestamptz paid_at
+        boolean collected
+        timestamptz created_at
+    }
+
+    ENGINE_INSTALLATION {
+        uuid id PK
+        text engine_key
+        boolean enabled
+        timestamptz installed_at
+        jsonb config
+    }
+
+    ENGINE_ACTIVITY_LINK {
+        uuid id PK
+        uuid membership_id FK
+        text context_type
+        uuid context_id
+        text engine_key FK
+        text external_session_id
+        jsonb external_summary
+        timestamptz created_at
+    }
+
+    USER ||--o{ MEMBERSHIP : "holds"
+    USER ||--o{ STAKE : "holds"
+    USER ||--o{ BILLING_SUBSCRIPTION : "pays"
+    MEMBERSHIP ||--o| PROFESSIONAL_PROFILE : "has profile"
+    MEMBERSHIP ||--o| DISPATCH_CAPABILITY : "dispatch-eligible as"
+    MEMBERSHIP ||--o{ COMPLIANCE_RECORD : "holds credential"
+    MEMBERSHIP }o--o| ROLE_TYPE : "role validated against (Farpost-only)"
+    JOB }o--o| ROLE_TYPE : "target role validated against (Farpost-only)"
+    USER ||--o{ JOB : "requests"
+    USER ||--o{ JOB : "assigned to"
+    USER ||--o{ WORK_REQUEST_ATTEMPT : "candidate in"
+    JOB ||--o{ WORK_REQUEST_ATTEMPT : "dispatch attempts"
+    JOB }o..o{ CLAIM : "subject_type=claim"
+    JOB }o..o{ BUILDING : "subject_type=building"
+    JOB }o..o{ PROPERTY : "subject_type=property"
+    JOB }o..o{ ASSET : "subject_type=asset"
+    BUILDING ||--o{ CLAIM : "resolved location of"
+    MEMBERSHIP ||--o{ CONTRIBUTION : "contributed by"
+    MEMBERSHIP ||--o{ CHECKLIST_RUN : "performs"
+    MEMBERSHIP ||--o{ NOTIFICATION_SUBSCRIPTION : "subscribes"
+    MEMBERSHIP ||--o{ PRODUCT_FEEDBACK : "submits"
+    MEMBERSHIP ||--o{ ENGINE_ACTIVITY_LINK : "activity in"
+    PROPERTY ||--o{ BUILDING : "parcel of"
+    BUILDING ||--o{ ASSET : "has"
+    BUILDING ||--o{ SCOUT_VISIT : "logs"
+    MEMBERSHIP ||--o{ SCOUT_VISIT : "performed by"
+    BUILDING ||--o{ CONTRIBUTION : "receives"
+    BUILDING ||--o{ FACT_STALENESS : "tracks"
+    BUILDING ||--o{ CHECKLIST_RUN : "vetted at"
+    ASSET ||--o{ CHECKLIST_RESULT : "checked in"
+    CHECKLIST_RUN ||--o{ CHECKLIST_RESULT : "scores"
+    JOB ||--o{ JOB_ATTACHMENT : "supporting documents"
+    JOB ||--o| JOB_COST_BREAKDOWN : "quotes"
+    JOB ||--o| JOB_NOTES : "notes"
+    JOB }o..o{ FULFILLMENT_FEE : "subject_type=job"
+    USER ||--o{ FULFILLMENT_FEE : "pays"
+    ENGINE_INSTALLATION ||--o{ ENGINE_ACTIVITY_LINK : "recorded by"
+</pre>
+</div>
+
+<h2>Relationship reference — one path at a time</h2>
+<p>
+  The full diagram above is dense by necessity — this is the same schema broken into small, focused
+  pieces, 2-4 tables each, so a single relationship path is easy to follow without the rest of the
+  schema competing for attention. Each card shows only the primary/foreign keys relevant to that path;
+  see the full diagram above for every field.
+</p>
+<div class="rel-grid">
+
+<div class="rel-card">
+  <h4>User → Membership</h4>
+  <pre class="mermaid">
+erDiagram
+    USER {
+        text id PK
+    }
+    MEMBERSHIP {
+        uuid id PK
+        text user_id FK
+        text role
+    }
+    USER ||--o{ MEMBERSHIP : holds
+  </pre>
+  <p>One User can hold any number of platform-wide capabilities — admin, agent, scout, owner — each its own row.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Membership → Professional Profile</h4>
+  <pre class="mermaid">
+erDiagram
+    MEMBERSHIP {
+        uuid id PK
+    }
+    PROFESSIONAL_PROFILE {
+        uuid membership_id PK,FK
+    }
+    MEMBERSHIP ||--o| PROFESSIONAL_PROFILE : "has profile"
+  </pre>
+  <p>Optional 1:1 extension — role-specific fields (brokerage, service area) attach here, not on Membership itself.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Membership → Dispatch Capability</h4>
+  <pre class="mermaid">
+erDiagram
+    MEMBERSHIP {
+        uuid id PK
+    }
+    DISPATCH_CAPABILITY {
+        uuid membership_id PK,FK
+    }
+    MEMBERSHIP ||--o| DISPATCH_CAPABILITY : "dispatch-eligible as"
+  </pre>
+  <p>Dispatch eligibility is its own attachable capability — present only for Memberships that are dispatch-eligible, not baked into every professional's root shape.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Membership → Compliance Record</h4>
+  <pre class="mermaid">
+erDiagram
+    MEMBERSHIP {
+        uuid id PK
+    }
+    COMPLIANCE_RECORD {
+        uuid id PK
+        uuid membership_id FK
+        text credential_type
+        date expiry_date
+    }
+    MEMBERSHIP ||--o{ COMPLIANCE_RECORD : "holds credential"
+  </pre>
+  <p>Insurance, WSIB, certifications — any role's expiring credential, not a contractor-only concept even though contractors are the first real user of it.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Membership → Role Type</h4>
+  <pre class="mermaid">
+erDiagram
+    MEMBERSHIP { text role }
+    ROLE_TYPE { text key PK }
+    MEMBERSHIP }o--o| ROLE_TYPE : "validated against (Farpost-only)"
+  </pre>
+  <p>Soft validation, not a hard FK — Membership.role is plain text at the shared-package level; Farpost alone checks it against its own curated taxonomy.</p>
+</div>
+
+<div class="rel-card">
+  <h4>User → Stake → Building / Property / Asset</h4>
+  <pre class="mermaid">
+erDiagram
+    USER {
+        text id PK
+    }
+    STAKE {
+        uuid id PK
+        text user_id FK
+        text subject_type
+        uuid subject_id
+    }
+    BUILDING {
+        uuid id PK
+    }
+    PROPERTY {
+        uuid id PK
+    }
+    ASSET {
+        uuid id PK
+    }
+    USER ||--o{ STAKE : holds
+    STAKE }o..o{ BUILDING : "subject_type=building"
+    STAKE }o..o{ PROPERTY : "subject_type=property"
+    STAKE }o..o{ ASSET : "subject_type=asset"
+  </pre>
+  <p>Polymorphic, same pattern used again for Job below — subject_type picks which table subject_id actually points at; not a real enforced FK, dotted lines here to say so.</p>
+</div>
+
+<div class="rel-card">
+  <h4>User → Job (requester &amp; assignee)</h4>
+  <pre class="mermaid">
+erDiagram
+    USER {
+        text id PK
+    }
+    JOB {
+        uuid id PK
+        uuid requester_user_id FK
+        uuid assignee_user_id FK
+    }
+    USER ||--o{ JOB : requests
+    USER ||--o{ JOB : "assigned to"
+  </pre>
+  <p>Both sides of a Job are plain Users — no Membership required to request, and matching against target_role happens at the application layer, not a schema constraint.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Job → Role Type</h4>
+  <pre class="mermaid">
+erDiagram
+    JOB { text target_role }
+    ROLE_TYPE { text key PK }
+    JOB }o--o| ROLE_TYPE : "validated against (Farpost-only)"
+  </pre>
+  <p>The same soft-validation pattern as Membership.role — target_role names what kind of professional is needed, checked against Farpost's own taxonomy.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Job → Work Request Attempt → User</h4>
+  <pre class="mermaid">
+erDiagram
+    JOB {
+        uuid id PK
+    }
+    WORK_REQUEST_ATTEMPT {
+        uuid id PK
+        uuid job_id FK
+        uuid candidate_user_id FK
+    }
+    USER {
+        text id PK
+    }
+    JOB ||--o{ WORK_REQUEST_ATTEMPT : "dispatch attempts"
+    USER ||--o{ WORK_REQUEST_ATTEMPT : "candidate in"
+  </pre>
+  <p>The dispatch/matching mechanism — one row per candidate tried per Job, independent of what the Job is actually about.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Job → Claim (polymorphic subject)</h4>
+  <pre class="mermaid">
+erDiagram
+    JOB {
+        uuid id PK
+        text subject_type
+        uuid subject_id
+    }
+    CLAIM {
+        uuid id PK
+    }
+    JOB }o..o{ CLAIM : "subject_type=claim"
+  </pre>
+  <p>Claim has its own identity — any number of Jobs can reference one Claim (the original dispatch job, a later follow-up inspection), not a fixed 1:1.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Claim → Building</h4>
+  <pre class="mermaid">
+erDiagram
+    CLAIM { uuid building_id FK }
+    BUILDING { uuid id PK }
+    BUILDING ||--o{ CLAIM : "resolved location of"
+  </pre>
+  <p>Optional — a claim's property is stored as its own intake-time snapshot; this only links it when the address actually resolves to a tracked Building.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Job → Job Attachment</h4>
+  <pre class="mermaid">
+erDiagram
+    JOB {
+        uuid id PK
+    }
+    JOB_ATTACHMENT {
+        uuid id PK
+        uuid job_id FK
+        text doc_type
+    }
+    JOB ||--o{ JOB_ATTACHMENT : "supporting documents"
+  </pre>
+  <p>Any loose supporting file — a photo, a deed, an invoice — doc_type is free text, not a fixed enum per document kind.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Job → Job Cost Breakdown</h4>
+  <pre class="mermaid">
+erDiagram
+    JOB { uuid id PK }
+    JOB_COST_BREAKDOWN { uuid job_id PK,FK }
+    JOB ||--o| JOB_COST_BREAKDOWN : quotes
+  </pre>
+  <p>Optional — only relevant for Jobs that involve a physical quote (labour/materials); a mortgage referral would never populate this.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Job → Job Notes</h4>
+  <pre class="mermaid">
+erDiagram
+    JOB {
+        uuid id PK
+    }
+    JOB_NOTES {
+        uuid job_id PK,FK
+        text requester_notes
+        text assignee_notes
+    }
+    JOB ||--o| JOB_NOTES : notes
+  </pre>
+  <p>Generic both-sides notes — renamed off "adjuster"/"contractor" so it fits any requester/assignee pairing, not just claims.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Job → Fulfillment Fee</h4>
+  <pre class="mermaid">
+erDiagram
+    JOB {
+        uuid id PK
+        text subject_type
+    }
+    FULFILLMENT_FEE {
+        uuid id PK
+        text subject_type
+        uuid subject_id
+        text payer_id FK
+    }
+    USER {
+        text id PK
+    }
+    JOB }o..o{ FULFILLMENT_FEE : "subject_type=job"
+    USER ||--o{ FULFILLMENT_FEE : pays
+  </pre>
+  <p>The shared billing pattern from core-billing-model.md, generalizing Farpost's real, live per-job platform fee (F22) — polymorphic like Stake and Claim, not a dedicated job_id FK, since a fee can bill any subject_type, not only a Job.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Property → Building</h4>
+  <pre class="mermaid">
+erDiagram
+    PROPERTY {
+        uuid id PK
+    }
+    BUILDING {
+        uuid id PK
+        uuid property_id FK
+    }
+    PROPERTY ||--o{ BUILDING : "parcel of"
+  </pre>
+  <p>Property is the land parcel; Building is a structure on it — kept as two distinct entities, matching Farpost's real, separate models.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Building → Asset</h4>
+  <pre class="mermaid">
+erDiagram
+    BUILDING {
+        uuid id PK
+    }
+    ASSET {
+        uuid id PK
+        uuid building_id FK
+    }
+    BUILDING ||--o{ ASSET : has
+  </pre>
+  <p>HVAC units, water heaters, electrical panels — the tracked equipment inside a specific building.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Building → Scout Visit → Membership</h4>
+  <pre class="mermaid">
+erDiagram
+    BUILDING {
+        uuid id PK
+    }
+    SCOUT_VISIT {
+        uuid id PK
+        uuid building_id FK
+        uuid membership_id FK
+    }
+    MEMBERSHIP {
+        uuid id PK
+    }
+    BUILDING ||--o{ SCOUT_VISIT : logs
+    MEMBERSHIP ||--o{ SCOUT_VISIT : "performed by"
+  </pre>
+  <p>One-time field-capture activity, not a standing relationship — "scout" is an ordinary Membership role, same as "admin" or "agent."</p>
+</div>
+
+<div class="rel-card">
+  <h4>Building → Contribution → Membership</h4>
+  <pre class="mermaid">
+erDiagram
+    BUILDING {
+        uuid id PK
+    }
+    CONTRIBUTION {
+        uuid id PK
+        uuid building_id FK
+        uuid membership_id FK
+    }
+    MEMBERSHIP {
+        uuid id PK
+    }
+    BUILDING ||--o{ CONTRIBUTION : receives
+    MEMBERSHIP ||--o{ CONTRIBUTION : "contributed by"
+  </pre>
+  <p>A professional's structured data contribution to a building's record — normalized out of Mongo's embedded contributions list.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Building → Fact Staleness</h4>
+  <pre class="mermaid">
+erDiagram
+    BUILDING {
+        uuid id PK
+    }
+    FACT_STALENESS {
+        uuid id PK
+        uuid building_id FK
+        text category
+    }
+    BUILDING ||--o{ FACT_STALENESS : tracks
+  </pre>
+  <p>Per-category documentation-freshness tracking (roof, electrical, plumbing, ...) — recomputed on every write, never trusted stale.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Building → Checklist Run → Membership</h4>
+  <pre class="mermaid">
+erDiagram
+    BUILDING {
+        uuid id PK
+    }
+    CHECKLIST_RUN {
+        uuid id PK
+        uuid building_id FK
+        uuid membership_id FK
+    }
+    MEMBERSHIP {
+        uuid id PK
+    }
+    BUILDING ||--o{ CHECKLIST_RUN : "vetted at"
+    MEMBERSHIP ||--o{ CHECKLIST_RUN : performs
+  </pre>
+  <p>A structured pass/fail vetting pass — Farpost's real existing mechanism for competency/compliance checks against a building's assets.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Checklist Run → Checklist Result → Asset</h4>
+  <pre class="mermaid">
+erDiagram
+    CHECKLIST_RUN {
+        uuid id PK
+    }
+    CHECKLIST_RESULT {
+        uuid id PK
+        uuid checklist_run_id FK
+        uuid asset_id FK
+        boolean passed
+    }
+    ASSET {
+        uuid id PK
+    }
+    CHECKLIST_RUN ||--o{ CHECKLIST_RESULT : scores
+    ASSET ||--o{ CHECKLIST_RESULT : "checked in"
+  </pre>
+  <p>One pass/fail row per asset checked during a single checklist run.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Membership → Notification Subscription</h4>
+  <pre class="mermaid">
+erDiagram
+    MEMBERSHIP {
+        uuid id PK
+    }
+    NOTIFICATION_SUBSCRIPTION {
+        uuid id PK
+        uuid membership_id FK
+    }
+    MEMBERSHIP ||--o{ NOTIFICATION_SUBSCRIPTION : subscribes
+  </pre>
+  <p>Which events/buildings/postal codes a professional wants alerted on — renamed off "Subscription" to avoid colliding with billing.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Membership → Product Feedback</h4>
+  <pre class="mermaid">
+erDiagram
+    MEMBERSHIP {
+        uuid id PK
+    }
+    PRODUCT_FEEDBACK {
+        uuid id PK
+        uuid membership_id FK
+    }
+    MEMBERSHIP ||--o{ PRODUCT_FEEDBACK : submits
+  </pre>
+  <p>In-app feature-usability feedback — renamed to avoid colliding with Vocare's own "session feedback" meaning.</p>
+</div>
+
+<div class="rel-card">
+  <h4>User → Billing Subscription</h4>
+  <pre class="mermaid">
+erDiagram
+    USER {
+        text id PK
+    }
+    BILLING_SUBSCRIPTION {
+        uuid id PK
+        text user_id FK
+    }
+    USER ||--o{ BILLING_SUBSCRIPTION : pays
+  </pre>
+  <p>The uniform $12/year plan (per core-billing-model.md, Robin's 2026-07-24 decision), attached directly to User, no role-scoping — coexists with FULFILLMENT_FEE's per-job fee, doesn't replace it. Flagged for a direct one-line reconfirmation that this really applies to Farpost, not just Vocare.</p>
+</div>
+
+<div class="rel-card">
+  <h4>Engine Installation → Engine Activity Link → Membership</h4>
+  <pre class="mermaid">
+erDiagram
+    ENGINE_INSTALLATION {
+        uuid id PK
+        text engine_key
+    }
+    ENGINE_ACTIVITY_LINK {
+        uuid id PK
+        text engine_key FK
+        uuid membership_id FK
+    }
+    MEMBERSHIP {
+        uuid id PK
+    }
+    ENGINE_INSTALLATION ||--o{ ENGINE_ACTIVITY_LINK : "recorded by"
+    MEMBERSHIP ||--o{ ENGINE_ACTIVITY_LINK : "activity in"
+  </pre>
+  <p>The suite-consumption join — which installed engine (Vocare, Jernel, Baby Kitty) recorded activity for which Farpost Membership.</p>
+</div>
+
+</div>
+
+<h2>Worked example — one user, several simultaneous relationships</h2>
+<p>
+  A single person can be a building's owner, a professional dealing with that same building, and
+  the platform's administrator, all at once, with no conflict in this schema — because "who this
+  person is to Farpost" is deliberately split across two independent axes rather than stored as one
+  flat role on <code>USER</code>.
+</p>
+<table>
+  <tr><th>Axis</th><th>Table</th><th>Answers</th><th>Tied to a specific building?</th></tr>
+  <tr>
+    <td><strong>Platform-wide capability</strong></td>
+    <td><code>MEMBERSHIP</code></td>
+    <td>"What can this person generically do across all of Farpost?"</td>
+    <td>No — one row per capability held, independent of any building</td>
+  </tr>
+  <tr>
+    <td><strong>Per-building relationship</strong></td>
+    <td><code>STAKE</code></td>
+    <td>"What is this specific person's relationship to this one building/property/asset?"</td>
+    <td>Yes — one row per relationship, per subject</td>
+  </tr>
+</table>
+<p>
+  Neither axis requires, implies, or excludes the other. A <code>USER</code> can accumulate as many
+  <code>MEMBERSHIP</code> rows and <code>STAKE</code> rows as reality actually requires. Concretely,
+  for one person who owns a building, professionally deals with it, and administers the platform:
+</p>
+<table>
+  <tr><th>Hat</th><th>Row(s)</th></tr>
+  <tr>
+    <td>Owner of Building X</td>
+    <td><code>STAKE</code>: <code>{ user_id, subject_type: "building", subject_id: X, role: "owner", kind: "verified_owner" }</code>
+      — a pure per-building fact, no platform credential involved</td>
+  </tr>
+  <tr>
+    <td>Platform administrator</td>
+    <td><code>MEMBERSHIP</code>: <code>{ user_id, role: "admin" }</code> — a pure platform-wide
+      capability, unrelated to any specific building</td>
+  </tr>
+  <tr>
+    <td>Professional dealing with Building X (agent, scout, ...)</td>
+    <td><code>MEMBERSHIP</code>: <code>{ user_id, role: "agent" }</code> (the generic credential) —
+      <em>and</em>, only if that work is actually being performed on Building X specifically, a second
+      <code>STAKE</code>: <code>{ user_id, subject_type: "building", subject_id: X, role: "agent",
+      kind: "manages_listing" }</code>, or a logged <code>SCOUT_VISIT</code> row if the work is
+      scouting rather than a durable listing relationship</td>
+  </tr>
+</table>
+<p>
+  This is the actual reason <code>Membership</code> and <code>Stake</code> are kept as two separate
+  tables rather than one "role" field on <code>User</code>: a single flat field can only hold one
+  value at a time, which would force picking "owner" <em>or</em> "admin" <em>or</em> "agent" —
+  breaking exactly this real, ordinary situation. Splitting the two axes is what lets all three hats
+  exist on the same person simultaneously without any special-casing.
+</p>
+
+<h2>What this schema assumes is already settled</h2>
+<div class="callout resolved">
+  <ul class="tight">
+    <li><strong><code>Membership</code> replaces <code>Professional.roles</code> + the 10 per-role documents.</strong>
+      One row per role held, <code>role</code> is plain <code>text</code> (no enum), per
+      <code>core-user-model.md</code>'s resolved fork.</li>
+    <li><strong><code>Stake</code> ports over conceptually as-is</strong> — already a well-designed
+      person↔subject pattern, deliberately kept separate from <code>Membership</code>.</li>
+    <li><strong><code>RoleType</code> stays an optional Farpost-only curation layer</strong> on top of
+      <code>Membership.role</code>, not part of the shared package.</li>
+    <li><strong><code>FULFILLMENT_FEE</code> generalizes <code>Job.payment</code> (the live F22 shape)</strong>
+      per <code>core-billing-model.md</code> — this is a real, concrete payoff of that abstraction,
+      not a new idea introduced here.</li>
+    <li><strong><code>BILLING_SUBSCRIPTION</code>'s flat $12/year framing — a real citation, not an
+      unverified assumption, but flagged for a direct one-line reconfirmation since a fresh read of
+      this doc can't verify it standalone.</strong> This isn't invented in this doc: per
+      <code>core-billing-model.md</code>, Robin directly overrode Farpost's own previously-planned
+      per-role multi-tier professional subscription model on 2026-07-24, choosing instead a single
+      uniform $12/year plan attached to every <code>User</code> in every project, Farpost included, no
+      role-scoping. It's meant to <em>coexist</em> with, not replace, Farpost's real transactional
+      per-job fee (<code>FULFILLMENT_FEE</code>) — one is a flat account-level fee, the other is
+      per-transaction, same as e.g. a marketplace charging both a membership fee and a per-sale
+      commission. That said: this specific decision lives in robinsamways.ca's own design doc, and a
+      fresh Farpost session reading only this schema draft has no way to verify it's real rather than
+      a Vocare-specific assumption that leaked in unchallenged — worth Robin confirming directly,
+      one line, that Farpost itself is really getting this flat annual charge on top of its existing
+      per-job model.</li>
+    <li><strong>"Scout" needs zero special-casing — confirmed by Farpost's own session, with real
+      history, not inferred here.</strong> Scout was briefly modeled as its own peer identity type
+      (alongside Professional/Owner/Admin) during the 2026-07-12 <code>unify-user-identity-model</code>
+      change, was recognized as wrong within about a day, and was folded back into being just another
+      <code>RoleType</code> value inside <code>Professional.roles</code> — the same kind of entry as
+      "adjuster" or "contractor" — via <code>fold-scout-into-professional-roles</code>, proposed and
+      archived the same day (2026-07-13). No standalone scouts collection has existed since. This is
+      real, historical evidence for the already-resolved <code>role: text</code> /
+      RoleType-taxonomy decision (see <code>core-user-model.md</code>): a role concept got fully
+      reconsidered and re-homed with zero schema migration, precisely because roles already live in a
+      flexible, admin-editable taxonomy rather than hardcoded peer types. Someone scouting a building —
+      you, scouting your own, per the earlier example — holds a completely ordinary
+      <code>Membership</code> row (<code>role: "scout"</code>), no different in kind from
+      <code>role: "admin"</code> or <code>role: "agent"</code>. <code>ScoutFieldNote</code> continuing
+      to exist as its own model isn't a leftover of the old identity type — it's a legitimate domain
+      object (a work-product/contribution record, same category as a claim or an inspection), distinct
+      from the identity question that already got resolved. That's exactly why <code>SCOUT_VISIT</code>
+      is modeled here as an activity table referencing a <code>Membership</code>, not as its own
+      identity concept.</li>
+    <li><strong><code>BuildingOwner</code> folds into <code>Membership</code> (<code>role: "owner"</code>) —
+      not into <code>Stake</code>, correcting an earlier guess in this doc.</strong> Confirmed by
+      Farpost's own session, using its own concrete example (a contractor, "Jane," who also owns her
+      home and helps administer the platform): <code>BuildingOwner</code>'s real job today is a
+      platform-wide fact — "this person has completed owner verification" (<code>verified_at</code>)
+      in the abstract, independent of any specific building — the exact same shape as
+      <code>Professional</code> ("this person is a verified, dispatchable contractor," also
+      independent of any specific building) and <code>Admin</code>. All three are additive,
+      independent membership documents keyed only on <code>user_id</code>, with no schema-level
+      exclusivity between them — precisely the pattern <code>Membership</code> already exists to
+      unify. <code>Stake</code> is untouched by this and keeps doing exactly what it already does:
+      "Jane owns <em>this specific</em> building" is still a <code>Stake</code> row
+      (<code>role: "owner"</code>, <code>subject_id</code> = that building), separate from the
+      platform-wide <code>Membership</code> fact that she's a verified owner at all. Buying a second
+      building only ever adds a second <code>Stake</code> row — no change to any
+      <code>Membership</code>.</li>
+    <li><strong>Dispatch stops being structurally privileged — pulled out of both
+      <code>Professional</code> and <code>Job</code>, matching a real, already-shipped Farpost
+      correction.</strong> Farpost's own history here is directly on point: it began as a
+      dispatch-claims tool, the dispatch-first framing was identified and corrected repeatedly at the
+      docs level (2026-06-21, 2026-06-22, and again 2026-07-03 — the third recurrence is why
+      <code>CLAUDE.md</code> rule 15 exists as a belt-and-suspenders fix after informal correction
+      failed twice), and — the part that matters for this schema — a real 2026-07-03
+      "dispatch unification" change already demoted dispatch at the <em>code</em> level: claim dispatch
+      was folded into a generic work-request framework (<code>RequestType</code> =
+      <code>claim</code> | <code>inspection_request</code> | <code>service_request</code>;
+      <code>WorkRequestAttempt</code> is a real, already-generic, polymorphic dispatch-attempt log
+      shared across all three) rather than claims keeping their own special dispatch mechanism. My
+      first pass hadn't caught up to this: it had <code>dispatch_*</code> fields baked directly into
+      <code>PROFESSIONAL_PROFILE</code>'s root shape, dispatch-attempt fields embedded directly in
+      <code>JOB</code> (implicitly claim-only, since <code>JOB.claim_id</code> was claim-specific), and
+      no <code>INSPECTION_REQUEST</code> entity at all — three ways the diagram was quietly repeating
+      the exact bias being asked about. First correction (superseded by the next item below, which
+      goes one level deeper): dispatch eligibility moved into its own attachable
+      <code>DISPATCH_CAPABILITY</code> table off <code>Membership</code>, and a dispatch-attempt
+      table plus an <code>INSPECTION_REQUEST</code> sibling to <code>CLAIM</code> were added to match
+      the real, already-generic <code>RequestType</code>/<code>WorkRequestAttempt</code> pattern.
+      <code>SERVICE_REQUEST</code> is the third real <code>RequestType</code> value but has no backing
+      model in the code yet, so it stays named in prose only, not given a fabricated table.</li>
+    <li><strong><code>Job</code> itself generalizes past claim-dispatch, one level deeper than the
+      item above — the same demotion pattern applied again, this time to the thing being dispatched
+      rather than the dispatch mechanism.</strong> Flagged directly, with the concrete gap: dispatch
+      itself had already been generalized (<code>WorkRequestAttempt</code>), but <code>Job</code>
+      underneath it still hardcoded <code>claim_id</code>/<code>contractor_id</code>/<code>adjuster_id</code>
+      — assuming a claim always exists and the two parties are always specifically a contractor and an
+      adjuster. That shape can't fit a realtor requesting a field specialist, or an owner requesting a
+      broker — there's no claim, and the roles aren't fixed. <code>Job</code> is now: a request, from
+      any <code>User</code> (<code>requester_user_id</code>, regardless of what
+      <code>Membership</code> rows they hold), for a specific <code>target_role</code> (a
+      <code>RoleType</code> key — same taxonomy <code>Membership.role</code> already validates
+      against), optionally naming or later resolving an <code>assignee_user_id</code>, optionally
+      about an object via the same generic <code>subject_type</code>/<code>subject_id</code> pattern
+      <code>Stake</code> already uses (a claim, a building, a property, or nothing at all — "find me a
+      mortgage" has no tracked subject). <code>INSPECTION_REQUEST</code> is retired entirely, one
+      change later than it was introduced — it's now just an ordinary <code>Job</code>
+      (<code>target_role: "inspector"</code>, <code>subject_type: "building"</code>), which is the
+      exact same "two parallel structures for the same concept" pattern already fixed twice elsewhere
+      in this doc (<code>Professional.roles</code> vs. the 10 role tables; <code>BuildingOwner</code>
+      vs. <code>Stake</code>) — resolved here before it could calcify a third time.
+      <code>WORK_REQUEST_ATTEMPT</code> simplifies too: since <code>Job</code> is now the only
+      top-level "thing being dispatched," its own <code>request_type</code>/<code>request_id</code>
+      polymorphism is no longer needed — it references <code>job_id</code> directly.
+      <code>CLAIM</code> flips from wrapping <code>Job</code> to <em>extending</em> it
+      (<code>CLAIM.job_id</code> is now its primary key, mirroring exactly how
+      <code>PROFESSIONAL_PROFILE.membership_id</code> extends <code>Membership</code>) — it keeps only
+      what's genuinely claim-specific (insurer file number, damage info, the property intake
+      snapshot), everything generic having moved up to <code>Job</code>. <code>JOB_NOTES</code>'
+      fields were renamed from <code>adjuster_notes</code>/<code>contractor_notes</code> to
+      <code>requester_notes</code>/<code>assignee_notes</code> for the same reason — a table meant to
+      serve any role pairing shouldn't hardcode which two roles it expects. This makes <code>Job</code>
+      a third instance of the same recurring shape: <code>Membership</code> (person ↔ platform
+      capability), <code>Stake</code> (person ↔ specific object, standing relationship), and now
+      <code>Job</code> (person ↔ person, one-off transactional request, optionally about an object) —
+      three scopes of the same underlying "who, in what relationship, to what, with what status"
+      question.</li>
+    <li><strong><code>Job.status</code>'s vocabulary, checked directly against the real
+      <code>ClaimStatus</code>/<code>JobStatus</code> enums — two distinct problems found, both fixed
+      differently.</strong> <code>CLOSED</code> turned out to be genuinely claim-specific and
+      confirmed (not just assumed) to stay off <code>Job.status</code> entirely — it's the insurer-side
+      administrative wrap-up, a real event layered on top of <code>Job.APPROVED</code>/payment-complete,
+      not a job-lifecycle state. <code>Claim.closed_at</code> stays exactly as designed. But
+      <code>NEW</code> exposed a real gap: <code>JobStatus</code> had no pre-dispatch state at all
+      (starting at <code>DISPATCHED</code>), which is incompatible with <code>Claim.job_id</code>
+      being a true 1:1-from-creation primary key — a claim (or a directly-named-assignee job, e.g.
+      "I want this broker") has to exist in a created-but-not-yet-dispatched state.
+      <code>DECLINED</code>/<code>TIMEOUT</code> exposed a second, different problem: they're already
+      tracked per-attempt via <code>DispatchResponse</code> on <code>WORK_REQUEST_ATTEMPT</code> —
+      carrying them on <code>Job.status</code> too would be the exact
+      <code>Professional.roles</code>-vs-per-role-tables bug recurring one layer down, two places
+      recording the same outcome with nothing keeping them in sync. Neither actually captured
+      <code>ClaimStatus.FAILED</code>'s real meaning either — "every candidate exhausted, giving up" is
+      terminal, not the same as one attempt's transient decline/timeout. Fixed:
+      <code>Job.status</code> is now <code>pending | dispatched | accepted | in_progress | documented
+      | approved | paid | exhausted</code> — a genuine initial state added, the redundant per-attempt
+      values dropped in favor of <code>WORK_REQUEST_ATTEMPT</code> owning them, and one real terminal
+      failure state added. The full <code>ClaimStatus</code> vocabulary now maps cleanly:
+      <code>NEW</code>→<code>pending</code>, <code>DISPATCHED</code>/<code>ACCEPTED</code>/
+      <code>IN_PROGRESS</code>/<code>DOCUMENTED</code>/<code>APPROVED</code> unchanged,
+      <code>CLOSED</code>→<code>Claim.closed_at</code> set, <code>FAILED</code>→
+      <code>Job.status = "exhausted"</code>.</li>
+    <li><strong>All 10 real Professional role models checked directly against
+      <code>PROFESSIONAL_PROFILE</code>'s consolidation — 9 fold in cleanly, and the one real outlier
+      (Contractor) got generalized rather than special-cased, per Robin's own override of the first
+      recommendation.</strong> Farpost's session confirmed <code>Accountant</code>, <code>Adjuster</code>,
+      <code>Agent</code>, <code>Appraiser</code>, <code>Broker</code>, <code>Inspector</code>,
+      <code>PropertyManager</code> are all 1-3 flat optional strings (licence numbers, affiliations) —
+      trivial to consolidate; <code>HomeStager</code>/<code>SpaceCoordinator</code> are explicitly
+      near-empty placeholders in the real code, no domain fields defined yet. <code>Contractor</code>
+      is the real outlier: nested service-area/compliance sub-schemas, a status enum, three credential
+      expiry dates, and — the part that actually mattered — two fields
+      (<code>service_area.postal_prefixes</code>, <code>damage_types</code>) that are genuinely
+      indexed and queried by the real dispatch-matching system, not just stored. The first
+      recommendation was a dedicated Contractor extension table to protect those indexes. Robin
+      rejected that directly — no table just for one role — so it's generalized instead, the same
+      move made repeatedly throughout this doc: <code>DISPATCH_CAPABILITY</code> gains
+      <code>service_postal_prefixes</code> and <code>max_drive_minutes</code> (a second, list-based
+      way of expressing service area alongside the existing radius-based one — any role can use
+      either), its existing <code>capabilities</code> field already covers what Farpost calls
+      <code>damage_types</code>; a new <code>COMPLIANCE_RECORD</code> table
+      (<code>credential_type</code>, <code>expiry_date</code>, <code>status</code>) attaches to any
+      <code>Membership</code> for insurance/WSIB/certification tracking, not contractor-exclusive even
+      though contractors are its first real user; and <code>Membership.status</code> gains a
+      <code>pending</code> value generically (any role can be pending activation, not just a
+      contractor awaiting compliance verification). Net result: still zero tables dedicated to any one
+      role — the real complexity got absorbed into already-generic structures instead.</li>
+    <li><strong><code>Claim</code> gets its own independent identity instead of extending
+      <code>Job</code> 1:1 — a real correction to v11, found by checking
+      <code>claim_repository.py</code> directly.</strong> The real code's
+      <code>set_status</code> treats <code>claim.job_id</code> as a plain, reassignable field, not an
+      immutable shared-key relationship — <code>Claim</code>-extends-<code>Job</code> was too rigid a
+      reading. More importantly, a genuine business scenario doesn't fit 1:1 at all: a follow-up
+      inspection requested against an already-existing claim is a second, distinct piece of work, not
+      a retry of the first. <code>CLAIM</code> now has its own <code>id</code> (dropping the shared
+      <code>job_id</code> primary key), and any number of <code>Job</code> rows can reference it the
+      exact same polymorphic way <code>Stake</code> already points at
+      <code>Building</code>/<code>Property</code>/<code>Asset</code>
+      (<code>Job.subject_type = "claim"</code>, <code>Job.subject_id = claim.id</code>) — one
+      dispatch job and a later inspection job can both point at the same claim, no special-casing.
+      Whether Farpost's real workflow actually needs more than one <code>Job</code> per claim in
+      practice is a genuine business-logic call, not resolved here — but the schema now supports
+      either answer without needing to be redesigned later.</li>
+    <li><strong>PostGIS specifics, deferred back to Farpost as expected — SRID 4326 (WGS84) with a
+      GiST index</strong> on every <code>geography</code> column, confirmed as the real intended
+      choice, not left genuinely open.</li>
+  </ul>
+</div>
+
+<div class="callout resolved">
+  <strong>Resolved — not a schema question, and deliberately not solved with one.</strong> Nothing in
+  either the current model or this redesign stops the same person from holding an <code>admin</code>
+  <code>Membership</code> and an <code>owner</code> <code>Membership</code>/<code>Stake</code> at
+  once — an admin could personally own a building whose records they also administer. Robin's own
+  call: no technical restriction for now — at Farpost's current scale there's very likely only one
+  real admin in practice, so recusal logic would be defensive code against a conflict with no second
+  party to create it yet. Instead, admin actions should already be logged with enough context
+  (<code>claim_id</code>/<code>job_id</code>/whatever record, per rule 7) that a real conflict would
+  be visible in an audit trail after the fact, if it ever mattered. A lightweight middle option worth
+  keeping in mind, not committed to building now: a UI banner when an admin views/edits a record they
+  hold an ownership <code>Stake</code> on ("you have an ownership interest here") — visibility without
+  blocking anything. Full programmatic recusal (blocking the action outright) stays the heavy option,
+  worth revisiting only once a real second admin exists whose incentives could actually diverge.
+</div>
+
+<h2>My own inferences — not confirmed, worth reacting to</h2>
+<div class="callout opinion">
+  <ul class="tight">
+    <li><strong>The 10 per-role documents (<code>Adjuster</code>, <code>Contractor</code>, ...) collapse
+      into one <code>PROFESSIONAL_PROFILE</code> table</strong>, keyed 1:1 on <code>membership_id</code>
+      instead of a <code>professional_id</code> slug string. Common fields (brokerage/office/region-style
+      attributes) become real columns; anything genuinely divergent per role goes in <code>extra jsonb</code>
+      rather than a 13th near-identical table. This is a guess at your rebuild's own appetite for
+      consolidation — could just as easily stay 10 separate tables if the fields diverge more than the
+      one <code>Adjuster</code> model I read suggests.</li>
+    <li><strong>Two more real naming collisions found while reading the actual code, same shape as the
+      already-resolved "Anchor" collision:</strong>
+      <ul>
+        <li><code>Subscription</code> — Farpost's real model today is a <em>notification</em> subscription
+          (which events, which building/postal code, which channel). <code>core-billing-model.md</code>'s
+          <code>Subscription</code> is a <em>recurring billing</em> plan. Renamed the notification one to
+          <code>NOTIFICATION_SUBSCRIPTION</code> above to keep them apart.</li>
+        <li><code>Feedback</code> — Farpost already has two real senses (in-app feature-usability feedback
+          with AI-generated insights; free-text adjuster/contractor notes on a <code>Job</code>), and Vocare's
+          conversation-engine adds a third (post-session analysis). Renamed to
+          <code>PRODUCT_FEEDBACK</code>/<code>PRODUCT_FEEDBACK_INSIGHT</code> and <code>JOB_NOTES</code>
+          above, leaving "Feedback"/"SessionFeedback" free for Vocare's engine part.</li>
+      </ul>
+    </li>
+    <li><strong>Mongo's embedded arrays don't translate directly to Postgres</strong> —
+      <code>Building.scout_visits</code>, <code>Building.contributions</code>,
+      <code>Building.fact_staleness</code>, and <code>Job.documentation.photos</code> were all embedded
+      lists/dicts in the Mongo documents. Normalized into real tables (<code>SCOUT_VISIT</code>,
+      <code>CONTRIBUTION</code>, <code>FACT_STALENESS</code>, <code>JOB_ATTACHMENT</code>) above — a
+      real structural decision the rebuild has to make either way, not something that carries over by
+      default.</li>
+    <li><strong><code>Claim</code> is not special — it's the one extension table that exists purely
+      because real code already backs it, not because <code>Job</code> was built around it.</strong>
+      Confirmed directly, with three deliberately non-claim examples: a realtor requesting a home
+      stager for a listing (attachment: a staging agreement, no extension table at all); a homeowner
+      with zero <code>Membership</code> rows requesting a mortgage broker (attachments: a deed, a
+      proof-of-income letter — still no extension table); a broker requesting a field documentation
+      specialist for listing photos (attachments only, nothing else). None of these touch
+      <code>Claim</code>. That's why <code>JOB_PHOTO</code> generalized into
+      <code>JOB_ATTACHMENT</code> (<code>doc_type</code> free text — photo, deed, staging agreement,
+      invoice, whatever a given job actually needs) rather than staying photo-specific: most jobs
+      carry nothing more than a handful of loose documents, not a full structured extension record.
+      <code>Claim</code> keeps its own dedicated table only because Farpost's real code already has a
+      genuinely large, structured field set for it (insurer file number, damage types, the property
+      snapshot) — if some future job type earns that same depth (a "Mortgage" or "StagingAgreement"
+      extension, say), it gets a table the exact same way, with the exact same standing, not a
+      lesser or provisional one.</li>
+    <li><strong><code>Claim.property</code> stayed as columns on <code>CLAIM</code>, not a link to
+      <code>BUILDING</code>/<code>PROPERTY</code>.</strong> Read this as a deliberate intake-time snapshot
+      (address/contact info as known when the claim was filed, which may drift from the building's current
+      record) rather than something that should always resolve live off <code>BUILDING</code> — flagged as
+      an assumption, not verified against any doc explaining the original reasoning.</li>
+    <li><strong><code>ENGINE_INSTALLATION</code> / <code>ENGINE_ACTIVITY_LINK</code> are new</strong> —
+      the suite-consumption objects from this session's conversation (the "admin page with installable
+      components" idea). <code>ENGINE_ACTIVITY_LINK</code> is the join between a Farpost context
+      (a <code>Membership</code> doing something on a <code>Job</code>/<code>Claim</code>) and an external
+      engine's own record (a Vocare session ID) — Farpost never owns or duplicates Vocare's data, just
+      references it.</li>
+  </ul>
+</div>
+
+<h2>Open questions this doc doesn't answer</h2>
+<ul class="tight">
+  <li><code>ENGINE_INSTALLATION</code>'s granularity — platform-wide (one row set) vs. ever needing to be
+    per-brokerage/per-account — deliberately left as the simpler platform-wide assumption per this
+    session's earlier discussion; not designed for per-account scoping. (This one's genuinely out of
+    Farpost's scope to answer — it's a robinsamways.ca-side suite-consumption concept with no
+    equivalent in Farpost's real schema, confirmed rather than assumed when Farpost's session flagged
+    not recognizing it.)</li>
+  <li>Whether Farpost's real workflow actually needs more than one <code>Job</code> against a single
+    <code>Claim</code> in practice (the follow-up-inspection scenario) — the schema now supports it
+    either way via <code>Job.subject_type = "claim"</code>, but whether it's ever actually used that
+    way is a business-logic call for Robin, not something the code or this doc can settle.</li>
+  <li>Whether the 9 "trivial" roles' scattered licence/affiliation strings should each get named
+    columns in <code>PROFESSIONAL_PROFILE.extra</code> or just live loosely in the
+    <code>jsonb</code> blob — not designed to field level here, since none of them are queried/indexed
+    the way Contractor's fields are. Genuinely inconsistent in an earlier revision of this doc
+    (Adjuster's <code>brokerage</code>/<code>office</code>/<code>region</code> had been promoted to
+    named columns while the equivalent fields on Agent/Broker/Appraiser/PropertyManager/Accountant
+    hadn't) — corrected by demoting all of them into <code>extra</code> uniformly until this question
+    is actually settled, rather than deciding it by accident via inconsistent example data.</li>
+  <li>Whether <code>Adjuster.brokerage</code>, <code>Broker.brokerage_affiliation</code>, and
+    <code>Agent.brokerage_affiliation</code> are one shared concept that should end up as a single
+    field, or three genuinely separate ones that only happen to share a name — not decided here,
+    parked inside <code>extra</code> either way until it's answered.</li>
+</ul>
+
+<script>
+  let panZoomInstance = null;
+
+  function fitDiagram() {
+    if (panZoomInstance) {
+      panZoomInstance.resize();
+      panZoomInstance.fit();
+      panZoomInstance.center();
+    }
+  }
+
+  // This script is deliberately the very last thing in <body> — it must run only after
+  // every .mermaid block on the page (the big diagram plus all the small relationship-
+  // reference ones) has actually been parsed into the DOM, not just the ones that existed
+  // above it earlier in the file.
+  mermaid.initialize({ startOnLoad: false, er: { useMaxWidth: false } });
+  // suppressErrors: a bad diagram anywhere on the page (a typo in one relationship-reference
+  // card, say) renders as an inline error box for that one diagram instead of rejecting this
+  // whole call — which would otherwise also skip the svg-pan-zoom setup below for the main
+  // diagram, even though that one parsed fine.
+  mermaid.run({ querySelector: ".mermaid", suppressErrors: true }).then(() => {
+    // Mermaid's DOM update and the browser's layout pass aren't guaranteed to be
+    // done yet when this promise resolves — svg-pan-zoom's initial fit/center needs
+    // the container's real, laid-out size, so give the browser one more tick first.
+    setTimeout(() => {
+      const svg = document.querySelector(".diagram-wrap svg");
+      if (svg && window.svgPanZoom) {
+        panZoomInstance = svgPanZoom(svg, {
+          zoomEnabled: true,
+          panEnabled: true,
+          controlIconsEnabled: true,
+          fit: true,
+          center: true,
+          minZoom: 0.05,
+          maxZoom: 10,
+        });
+        window.addEventListener("resize", fitDiagram);
+      }
+    }, 150);
+  }).catch((err) => {
+    console.error("Mermaid render failed:", err);
+  });
+</script>
+
+</body>
+</html>

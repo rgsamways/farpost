@@ -1,0 +1,9 @@
+# dependencies (each app also has its own, this covers anything at root)
+/node_modules
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# editor
+*.swp

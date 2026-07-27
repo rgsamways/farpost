@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Farpost framing scaffold mockup (static, non-functional)</title>
+<style>
+  :root {
+    --background: #ffffff;
+    --foreground: #000000;
+    --muted: #6b6b6b;
+    --accent: #000000; /* plain black/white per request — no theme decided yet */
+    --border: #d4d4d4;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 15px;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  .banner {
+    background: #f5f5f5;
+    color: #555;
+    font-size: 12px;
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .shell {
+    display: flex;
+    max-width: 1152px;
+    margin: 0 auto;
+  }
+
+  /* ---- Left nav: tiered, collapsible (DrawerNav pattern) ---- */
+  .left-nav {
+    width: 256px;
+    flex-shrink: 0;
+    height: 100vh;
+    padding: 24px 20px;
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+  }
+
+  .brand {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    display: inline-block;
+  }
+
+  .nav-group { margin-bottom: 20px; }
+  .nav-heading {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .nav-row { display: flex; align-items: center; }
+  .nav-link {
+    display: block;
+    flex: 1;
+    padding: 4px 6px;
+    font-size: 14px;
+    border-radius: 4px;
+  }
+  .nav-link.active { font-weight: 700; text-decoration: underline; }
+  .nav-link:hover { background: #f5f5f5; }
+  .chev { color: var(--muted); font-size: 11px; width: 20px; text-align: center; }
+  .nav-sub { padding-left: 14px; border-left: 1px solid var(--border); margin-left: 8px; }
+  .nav-sub .nav-link { color: var(--muted); font-size: 13px; }
+
+  /* ---- Center content ---- */
+  .content {
+    flex: 1;
+    min-width: 0;
+    padding: 0 40px 60px;
+    max-width: 768px;
+  }
+
+  .sticky-header {
+    position: sticky;
+    top: 0;
+    background: var(--background);
+    padding: 24px 0 16px;
+  }
+  .sticky-header .kicker { font-size: 12px; color: var(--muted); margin: 0 0 4px; }
+  .sticky-header h1 { font-size: 20px; margin: 0; font-weight: 700; }
+  .sticky-header hr { border: none; border-top: 1px solid var(--border); margin-top: 16px; }
+
+  .section { margin: 40px 0 28px; }
+  .section-heading-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .section-heading-row h2 { font-size: 15px; margin: 0; font-weight: 700; }
+  .section-heading-row hr { flex: 1; border: none; border-top: 1px solid #000; }
+  .section p { font-size: 13px; line-height: 1.6; color: #333; }
+
+  .placeholder-note {
+    margin-top: 40px;
+    padding: 12px 16px;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  /* ---- Right rail: icons + inline anchor nav (RightRail/PageOutline pattern) ---- */
+  .right-rail {
+    width: 256px;
+    flex-shrink: 0;
+    height: 100vh;
+    padding: 24px 20px;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .icon-row { display: flex; gap: 8px; }
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+  }
+
+  .outline-heading {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .outline-list { display: flex; flex-direction: column; gap: 4px; }
+  .outline-item {
+    font-size: 13px;
+    padding: 4px 8px;
+    border-left: 2px solid var(--border);
+    color: var(--muted);
+  }
+  .outline-item.active {
+    border-left-color: #000;
+    color: #000;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  STATIC MOCKUP — the robinsamways.ca 3-column framing applied to a placeholder Farpost page. Nav labels, page content, and anchor entries below are all illustrative/faked (Farpost has no real anchor-nav content yet) — not real Farpost information architecture. Plain black/white, no theme decided.
+</div>
+
+<div class="shell">
+
+  <!-- LEFT NAV -->
+  <nav class="left-nav">
+    <a class="brand">Farpost</a>
+
+    <div class="nav-group">
+      <div class="nav-heading">Platform</div>
+      <div class="nav-row"><a class="nav-link active">Dashboard</a></div>
+      <div class="nav-row">
+        <a class="nav-link">Jobs</a><span class="chev">&#9662;</span>
+      </div>
+      <div class="nav-sub">
+        <div class="nav-row"><a class="nav-link">Open</a></div>
+        <div class="nav-row"><a class="nav-link">In Progress</a></div>
+        <div class="nav-row"><a class="nav-link">Completed</a></div>
+      </div>
+      <div class="nav-row">
+        <a class="nav-link">Buildings</a><span class="chev">&#9656;</span>
+      </div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-heading">Network</div>
+      <div class="nav-row">
+        <a class="nav-link">Professionals</a><span class="chev">&#9656;</span>
+      </div>
+      <div class="nav-row"><a class="nav-link">Requests</a></div>
+    </div>
+
+    <div class="nav-group">
+      <div class="nav-heading">Account</div>
+      <div class="nav-row"><a class="nav-link">Billing</a></div>
+      <div class="nav-row"><a class="nav-link">Team</a></div>
+    </div>
+  </nav>
+
+  <!-- CENTER CONTENT -->
+  <main class="content">
+    <header class="sticky-header">
+      <p class="kicker">Building &middot; 136 Spence Rd</p>
+      <h1>Record Overview</h1>
+      <hr />
+    </header>
+
+    <div class="section">
+      <div class="section-heading-row">
+        <h2>Property Summary</h2>
+        <hr />
+      </div>
+      <p>Placeholder body copy — this is where real Farpost record content renders once the rebuild has actual pages to show. The heading above is the same pattern as robinsamways.ca's SectionHeader: a real anchor id, picked up automatically by the outline on the right.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-heading-row">
+        <h2>Documentation Status</h2>
+        <hr />
+      </div>
+      <p>Another placeholder section, just to demonstrate the outline tracking more than one heading and highlighting whichever one is currently in view while scrolling.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-heading-row">
+        <h2>Recent Activity</h2>
+        <hr />
+      </div>
+      <p>A third placeholder section — real content here would be an activity feed, not this line of text.</p>
+    </div>
+
+    <div class="placeholder-note">
+      Every heading and its position in the right rail's "On this page" list is faked for this mock — Farpost doesn't have real SectionHeader-style pages yet. The mechanism (scan the DOM for real headings, list them, highlight the one in view) is the reusable part; the content isn't.
+    </div>
+  </main>
+
+  <!-- RIGHT RAIL -->
+  <aside class="right-rail">
+    <div class="icon-row">
+      <div class="icon-btn" title="Settings">&#9881;</div>
+      <div class="icon-btn" title="Sign in">&#8677;</div>
+    </div>
+
+    <div>
+      <div class="outline-heading">&#9776; On this page</div>
+      <div class="outline-list">
+        <a class="outline-item active">Property Summary</a>
+        <a class="outline-item">Documentation Status</a>
+        <a class="outline-item">Recent Activity</a>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+</body>
+</html>

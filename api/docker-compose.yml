@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: farpost
+      POSTGRES_PASSWORD: farpost
+      POSTGRES_DB: farpost
+    ports:
+      - "5435:5432"
+    volumes:
+      - farpost-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  farpost-postgres-data:

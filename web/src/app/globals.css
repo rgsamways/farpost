@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+:root {
+  /* Farpost confirmed brand tokens — docs/archives/farpost-brand-tokens.md
+     (NFC card design session, printed/confirmed). Design.md Decision 4
+     flags this as a project-wide reading of CLAUDE.md's "confirmed color
+     palette" wording, not yet independently re-confirmed for the web app. */
+  --navy: #16243d;
+  --orange: #e8743b;
+  --offwhite: #f3f1ec;
+  --slate: #6b7280;
+  --hairline-navy: #2c3e5c;
+
+  --background: var(--offwhite);
+  --foreground: var(--navy);
+  --muted: var(--slate);
+  --accent: var(--orange);
+
+  /* settings-page: FontSizeSetting/SettingsBootstrap write the resolved
+     multiplier here directly via style.setProperty. */
+  --font-scale: 1;
+}
+
+@theme inline {
+  --color-navy: var(--navy);
+  --color-orange: var(--orange);
+  --color-offwhite: var(--offwhite);
+  --color-slate: var(--slate);
+  --color-hairline-navy: var(--hairline-navy);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+}
+
+/* settings-page: `1rem` here resolves against the browser's initial
+   font-size (rem is never self-referential on the root element itself), so
+   this is always a clean multiple of the real default, not a compounding
+   one across re-applications. */
+html {
+  font-size: calc(1rem * var(--font-scale));
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+/* settings-page D2: reduced motion's CSS half — scoped to the one element
+   that actually needs it (DrawerNav's slide transition, via its
+   `motion-safe-transition` marker class) rather than a blanket `*`
+   override, so incidental hover transitions elsewhere aren't affected.
+   PageOutline's smooth scroll is a separate, JS-level decision
+   (`scrollIntoView`'s explicit `behavior` option overrides CSS
+   `scroll-behavior` entirely, so it can't be handled here) — see
+   PageOutline.tsx's own reduced-motion check. */
+.reduce-motion .motion-safe-transition {
+  transition: none !important;
+}
+
+/* Session-conditional sign-in/profile icon (mobile-app-shell design.md
+   Decision 3): both links always render in the DOM, this toggles which one
+   is visible via a `data-signed-in` attribute on <html> — defaults to
+   signed-out since nothing sets the attribute yet. wire-better-auth sets it
+   on real session events later; no other code should need to change. */
+.signed-in-only {
+  display: none;
+}
+html[data-signed-in] .signed-out-only {
+  display: none;
+}
+html[data-signed-in] .signed-in-only {
+  display: flex;
+}
+
+/* Pairs with PageOutline's IntersectionObserver rootMargin — both
+   recalibrated to this project's real combined sticky-header height: the
+   brand header (content-driven height as of header-spacing-and-icon-
+   alignment, measured at 73.75px) plus the center column's own sticky
+   per-page header (~105px: pt-6 + kicker line + h1 line + mt-4 + hr +
+   pb-4). ~179px total, so an anchor jump or PageOutline click doesn't land
+   a heading underneath either header. */
+main h2[id] {
+  scroll-margin-top: 179px;
+}

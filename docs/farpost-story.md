@@ -141,3 +141,13 @@ This one went the smoothest of the three schema pieces built today — no real i
 Deliberately left undone, on purpose: no connection was drawn between a checklist run and the "request for work" object built earlier today, even though the obvious real-world case — an inspector visiting on a job — connects the two naturally. Neither of Farpost's own planning documents actually called for that connection, and guessing at it now risks exactly the kind of mistake already caught and fixed once before, where two things that look similar quietly got tangled together before it was clear they should be. Better to leave it a visible gap than invent a wrong answer.
 
 Nothing about this is visible yet — there's still no screen where any of this shows up. But it's the actual foundation the near-term features (a simple digital record of what's in your home, a maintenance timeline, seasonal reminders) will be built directly on top of, not a placeholder for it.
+
+### 2026-07-27 — A record of what happened, to whoever needs to know it
+
+Same day, the last piece of today's foundation work: a real place to record *that something happened* — separate from the record of the thing itself. A job got created, a claim got closed, an inspection got completed — each of those is now a real, permanent fact, with who (or what) caused it, what it's about, and who needs to be told.
+
+The second half matters just as much as the first: who gets told isn't one shared checkbox anymore. Each person who needs to know about something now has their own, independent row — so if an owner and their property manager both need to hear about the same event, one of them reading it doesn't quietly mark it "read" for the other. That's a small, deliberate fix for a real sloppiness the very first version of Farpost had — where "has this been seen" was tracked once, globally, for everyone, instead of once per person.
+
+One honest, small thing worth naming: while building this, a real mismatch turned up between an early planning note and how a person's account is actually stored in the database — the note assumed one column type, the real column is a different (also fine) one. It got caught and corrected before it could become a bug nobody would understand months from now, in exactly the way this whole process is meant to catch it.
+
+Like the other schema work today, nothing about this is visible on screen yet. But it's what every future notification — an email, an in-app alert, an activity feed — will eventually be built on top of.

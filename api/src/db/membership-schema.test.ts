@@ -31,3 +31,65 @@ describe("membership.role", () => {
     expect(row.status).toBe("active");
   });
 });
+
+describe("membership.status", () => {
+  afterEach(cleanup);
+
+  it("rejects a status value outside the CHECK constraint", async () => {
+    await db.insert(schema.user).values({
+      id: TEST_USER_ID,
+      name: "Test User",
+      email: `${TEST_USER_ID}@example.com`,
+    });
+
+    await expect(
+      db.insert(schema.membership).values({
+        userId: TEST_USER_ID,
+        role: "agent",
+        // biome-ignore lint: intentionally invalid to exercise the DB-level CHECK constraint
+        status: "bogus" as any,
+      }),
+    ).rejects.toThrow();
+  });
+});
+
+describe("membership (user_id, role) active-uniqueness", () => {
+  afterEach(cleanup);
+
+  it("rejects a second active grant of the same role for the same user", async () => {
+    await db.insert(schema.user).values({
+      id: TEST_USER_ID,
+      name: "Test User",
+      email: `${TEST_USER_ID}@example.com`,
+    });
+    await db.insert(schema.membership).values({ userId: TEST_USER_ID, role: "agent" });
+
+    await expect(
+      db.insert(schema.membership).values({ userId: TEST_USER_ID, role: "agent" }),
+    ).rejects.toThrow();
+  });
+
+  it("permits a revoked-then-regranted role", async () => {
+    await db.insert(schema.user).values({
+      id: TEST_USER_ID,
+      name: "Test User",
+      email: `${TEST_USER_ID}@example.com`,
+    });
+    const [first] = await db
+      .insert(schema.membership)
+      .values({ userId: TEST_USER_ID, role: "agent" })
+      .returning();
+    await db
+      .update(schema.membership)
+      .set({ status: "revoked" })
+      .where(eq(schema.membership.id, first.id));
+
+    await db.insert(schema.membership).values({ userId: TEST_USER_ID, role: "agent" });
+
+    const rows = await db
+      .select()
+      .from(schema.membership)
+      .where(eq(schema.membership.userId, TEST_USER_ID));
+    expect(rows).toHaveLength(2);
+  });
+});

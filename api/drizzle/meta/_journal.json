@@ -8,6 +8,34 @@
       "when": 1785126868226,
       "tag": "0000_far_nightmare",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785177228717,
+      "tag": "0001_enable_postgis_pg_trgm",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785177247263,
+      "tag": "0002_set_updated_at_trigger_fn",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785177519674,
+      "tag": "0003_core_building_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785177535956,
+      "tag": "0004_attach_building_updated_at_trigger",
+      "breakpoints": true
     }
   ]
 }

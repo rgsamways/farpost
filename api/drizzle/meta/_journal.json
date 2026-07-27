@@ -71,6 +71,13 @@
       "when": 1785184882336,
       "tag": "0009_event_log_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785188198459,
+      "tag": "0010_notification_subscription",
+      "breakpoints": true
     }
   ]
 }

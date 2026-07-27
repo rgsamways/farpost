@@ -15,6 +15,7 @@ import { jobAttachment } from "./job-attachment-schema.js";
 import { jobCostBreakdown } from "./job-cost-breakdown-schema.js";
 import { jobNotes } from "./job-notes-schema.js";
 import { membership } from "./membership-schema.js";
+import { notificationSubscription } from "./notification-subscription-schema.js";
 import { professionalProfile } from "./professional-profile-schema.js";
 import { property } from "./property-schema.js";
 import { unit } from "./unit-schema.js";
@@ -64,6 +65,7 @@ export const membershipRelations = relations(membership, ({ one, many }) => ({
   }),
   complianceRecords: many(complianceRecord),
   checklistRuns: many(checklistRun),
+  notificationSubscriptions: many(notificationSubscription),
 }));
 
 export const professionalProfileRelations = relations(professionalProfile, ({ one }) => ({
@@ -216,5 +218,17 @@ export const eventRecipientRelations = relations(eventRecipient, ({ one }) => ({
   event: one(event, {
     fields: [eventRecipient.eventId],
     references: [event.id],
+  }),
+}));
+
+// notification_subscription -> membership only. Deliberately NOT related
+// to `event` — a subscription is a standing rule matched against future
+// events by value (event_type, anchor_type, anchor_value) at fan-out time,
+// not a link to any specific event row (design.md Decision 4). No FK
+// exists to add a relation to in the first place.
+export const notificationSubscriptionRelations = relations(notificationSubscription, ({ one }) => ({
+  membership: one(membership, {
+    fields: [notificationSubscription.membershipId],
+    references: [membership.id],
   }),
 }));

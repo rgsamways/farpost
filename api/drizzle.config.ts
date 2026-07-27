@@ -28,6 +28,7 @@ export default defineConfig({
     "./src/db/checklist-result-schema.ts",
     "./src/db/event-schema.ts",
     "./src/db/event-recipient-schema.ts",
+    "./src/db/notification-subscription-schema.ts",
   ],
   out: "./drizzle",
   dbCredentials: {

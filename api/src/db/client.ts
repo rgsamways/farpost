@@ -25,6 +25,7 @@ import * as checklistRunSchema from "./checklist-run-schema.js";
 import * as checklistResultSchema from "./checklist-result-schema.js";
 import * as eventSchema from "./event-schema.js";
 import * as eventRecipientSchema from "./event-recipient-schema.js";
+import * as notificationSubscriptionSchema from "./notification-subscription-schema.js";
 import * as relationsSchema from "./relations.js";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -54,6 +55,7 @@ export const schema = {
   ...checklistResultSchema,
   ...eventSchema,
   ...eventRecipientSchema,
+  ...notificationSubscriptionSchema,
   ...relationsSchema,
 };
 

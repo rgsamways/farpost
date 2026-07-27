@@ -168,4 +168,14 @@ The staleness piece is worth explaining plainly, since it's central to what "liv
 
 One real, honest snag came up building the staleness calculation, worth naming because it's a good example of the discipline this process is built around: the way the "when does this become stale" date was originally planned to be calculated turned out to rely on a database behavior that isn't actually guaranteed to be stable — a subtle distinction, but a real one, and the database correctly refused to accept it rather than silently doing something wrong. Three different ways of writing the same calculation were tried against a scratch, throwaway copy of the table until one was found that both worked and produced the identical, verified answer — then, and only then, applied to the real thing.
 
-Nothing about any of this is visible on a screen yet. But it's the last piece of today's foundation — five real database changes, twenty-four real tables, all still standing on nothing but plumbing so far. What gets built on top of it starts next.
+Nothing about any of this is visible on a screen yet. But it's another real piece of today's foundation, on top of twenty-four real tables built so far.
+
+### 2026-07-27 — Deciding how Farpost gets paid
+
+The last piece of a very long day: a real place to track who's actually paying for an account. The plan, decided today: every account — everyone, no exceptions — pays the same small yearly fee (framed as "$1 a month," charged as one $12 payment a year) to unlock some extra things beyond the free basics. What those extra things actually are hasn't been decided yet, and that's fine — today was about making sure the underlying plumbing is ready whenever that decision gets made, not about building the features themselves.
+
+One thing worth explaining, since it shapes how flexible this ends up being: the price itself isn't hardcoded anywhere. It's just a number stored alongside each person's subscription, so raising the price later — say from $1 to $5 a month — doesn't require touching the database at all. It also means existing subscribers can be left at their original price if that's ever the right call, since each subscription remembers its own price independently.
+
+Two other real ideas surfaced today but were deliberately left for later, on purpose, not forgotten: charging a fee only when a professional actually completes a paid job (the old version of Farpost already did something like this), and letting people pre-pay for a bundle of credits to spend over time, the way you'd buy a book of stamps. Both are real, well-understood ideas — they're just waiting for actual evidence that they're needed before any code gets written for them.
+
+That closes out today's run of foundational database work: eight separate pieces, each planned, built, checked against the real database, and confirmed working, in one very long day.

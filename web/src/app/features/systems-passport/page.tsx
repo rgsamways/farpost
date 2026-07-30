@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import PageHeader from "@/components/PageHeader";
 import SectionHeader from "@/components/SectionHeader";
+import SegmentedDateInput from "@/components/SegmentedDateInput";
 import { authClient } from "@/lib/auth-client";
 import { apiFetch } from "@/lib/api-client";
 
@@ -20,10 +21,24 @@ interface Asset {
   manufacturer: string | null;
   model: string | null;
   serialNumber: string | null;
+  location: string | null;
   installedDate: string | null;
+  lastServicedDate: string | null;
   warrantyExpiryDate: string | null;
   conditionStatus: string | null;
+  conditionNotes: string[] | null;
+  photoUrls: string[] | null;
 }
+
+type AssetPatch = Partial<
+  Omit<Asset, "id" | "assetType" | "conditionNotes" | "photoUrls"> & {
+    conditionNotes: string[];
+    photoUrls: string[];
+  }
+>;
+
+const inputClass =
+  "mt-1 block w-full rounded-md border border-foreground/20 bg-background px-3 py-2 text-sm focus:border-accent focus:outline-none";
 
 export default function SystemsPassportPage() {
   const router = useRouter();
@@ -68,10 +83,20 @@ export default function SystemsPassportPage() {
     setNewAssetType("");
   }
 
-  async function handleConditionChange(assetId: string, conditionStatus: string) {
+  // Updates local state immediately (so typing feels responsive) and
+  // persists on top — callers decide the moment to persist (onBlur for
+  // free text, onChange for selects/dates, which already only fire on a
+  // complete, meaningful value).
+  function updateAssetLocally(assetId: string, patch: AssetPatch) {
+    setAssets((current) =>
+      current.map((asset) => (asset.id === assetId ? { ...asset, ...patch } : asset)),
+    );
+  }
+
+  async function persistAsset(assetId: string, patch: AssetPatch) {
     const res = await apiFetch(`/api/assets/${assetId}`, {
       method: "PATCH",
-      body: JSON.stringify({ conditionStatus }),
+      body: JSON.stringify(patch),
     });
     const updated = await res.json();
     setAssets((current) => current.map((asset) => (asset.id === assetId ? updated : asset)));
@@ -117,28 +142,143 @@ export default function SystemsPassportPage() {
               No systems tracked yet — add one below.
             </p>
           )}
-          <ul className="mb-6 space-y-3">
+          <ul className="mb-6 space-y-6">
             {assets.map((asset) => (
-              <li
-                key={asset.id}
-                className="rounded-md border border-foreground/20 p-3 text-sm"
-              >
-                <p className="font-semibold">{asset.label ?? asset.assetType}</p>
-                <p className="text-muted">
-                  {asset.manufacturer} {asset.model}
-                </p>
-                <label className="mt-2 block text-xs text-muted">
-                  Condition
-                  <select
-                    value={asset.conditionStatus ?? ""}
-                    onChange={(event) => handleConditionChange(asset.id, event.target.value)}
-                    className="mt-1 block rounded-md border border-foreground/20 bg-background px-2 py-1 text-sm"
-                  >
-                    <option value="">Unknown</option>
-                    <option value="good">Good</option>
-                    <option value="fair">Fair</option>
-                    <option value="needs_repair">Needs repair</option>
-                  </select>
+              <li key={asset.id} className="rounded-lg border border-foreground/20 p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <input
+                    type="text"
+                    defaultValue={asset.label ?? ""}
+                    placeholder={asset.assetType}
+                    onBlur={(event) => persistAsset(asset.id, { label: event.target.value })}
+                    className="w-full rounded-md border border-transparent bg-transparent px-0 py-1 text-base font-semibold focus:border-foreground/20 focus:bg-background focus:px-2 focus:outline-none"
+                  />
+                  <span className="mt-1 shrink-0 rounded-full bg-foreground/10 px-2.5 py-1 text-xs uppercase tracking-wide text-muted">
+                    {asset.assetType}
+                  </span>
+                </div>
+
+                <hr className="my-4 border-t border-foreground/10" />
+
+                <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+                  <label className="block">
+                    <span className="text-xs text-muted">Manufacturer</span>
+                    <input
+                      type="text"
+                      defaultValue={asset.manufacturer ?? ""}
+                      onBlur={(event) => persistAsset(asset.id, { manufacturer: event.target.value })}
+                      className={inputClass}
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-xs text-muted">Model</span>
+                    <input
+                      type="text"
+                      defaultValue={asset.model ?? ""}
+                      onBlur={(event) => persistAsset(asset.id, { model: event.target.value })}
+                      className={inputClass}
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-xs text-muted">Serial number</span>
+                    <input
+                      type="text"
+                      defaultValue={asset.serialNumber ?? ""}
+                      onBlur={(event) => persistAsset(asset.id, { serialNumber: event.target.value })}
+                      className={inputClass}
+                    />
+                  </label>
+
+                  <label className="block">
+                    <span className="text-xs text-muted">Location</span>
+                    <input
+                      type="text"
+                      defaultValue={asset.location ?? ""}
+                      placeholder="e.g. basement, attic"
+                      onBlur={(event) => persistAsset(asset.id, { location: event.target.value })}
+                      className={inputClass}
+                    />
+                  </label>
+
+                  <SegmentedDateInput
+                    label="Installed"
+                    value={asset.installedDate}
+                    onChange={(isoDate) => {
+                      updateAssetLocally(asset.id, { installedDate: isoDate || null });
+                      persistAsset(asset.id, { installedDate: isoDate });
+                    }}
+                  />
+
+                  <SegmentedDateInput
+                    label="Last serviced"
+                    value={asset.lastServicedDate}
+                    onChange={(isoDate) => {
+                      updateAssetLocally(asset.id, { lastServicedDate: isoDate || null });
+                      persistAsset(asset.id, { lastServicedDate: isoDate });
+                    }}
+                  />
+
+                  <SegmentedDateInput
+                    label="Warranty expiry"
+                    value={asset.warrantyExpiryDate}
+                    onChange={(isoDate) => {
+                      updateAssetLocally(asset.id, { warrantyExpiryDate: isoDate || null });
+                      persistAsset(asset.id, { warrantyExpiryDate: isoDate });
+                    }}
+                  />
+
+                  <label className="block">
+                    <span className="text-xs text-muted">Condition</span>
+                    <select
+                      value={asset.conditionStatus ?? ""}
+                      onChange={(event) => {
+                        updateAssetLocally(asset.id, { conditionStatus: event.target.value });
+                        persistAsset(asset.id, { conditionStatus: event.target.value });
+                      }}
+                      className={inputClass}
+                    >
+                      <option value="">Unknown</option>
+                      <option value="good">Good</option>
+                      <option value="fair">Fair</option>
+                      <option value="needs_repair">Needs repair</option>
+                    </select>
+                  </label>
+                </div>
+
+                <label className="mt-4 block">
+                  <span className="text-xs text-muted">Condition notes</span>
+                  <textarea
+                    defaultValue={(asset.conditionNotes ?? []).join("\n")}
+                    placeholder="One note per line"
+                    rows={2}
+                    onBlur={(event) => {
+                      const notes = event.target.value
+                        .split("\n")
+                        .map((note) => note.trim())
+                        .filter(Boolean);
+                      persistAsset(asset.id, { conditionNotes: notes });
+                    }}
+                    className={`${inputClass} resize-y`}
+                  />
+                </label>
+
+                <label className="mt-4 block">
+                  <span className="text-xs text-muted">Photo URLs</span>
+                  <input
+                    type="text"
+                    defaultValue={(asset.photoUrls ?? []).join(", ")}
+                    placeholder="Comma-separated links"
+                    onBlur={(event) => {
+                      const urls = event.target.value
+                        .split(",")
+                        .map((url) => url.trim())
+                        .filter(Boolean);
+                      persistAsset(asset.id, { photoUrls: urls });
+                    }}
+                    className={inputClass}
+                  />
                 </label>
               </li>
             ))}

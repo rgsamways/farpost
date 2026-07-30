@@ -101,3 +101,26 @@ describe("asset manufacturer/warranty detail", () => {
     expect(row.warrantyExpiryDate).toBe("2030-01-01");
   });
 });
+
+describe("asset location/last_serviced_date detail", () => {
+  afterEach(cleanup);
+
+  it("persists location and last_serviced_date independently of installed_date", async () => {
+    const { property } = await insertTestPropertyBuildingUnit();
+    const [row] = await db
+      .insert(schema.asset)
+      .values({
+        subjectType: "property",
+        subjectId: property.id,
+        label: TEST_ASSET_LABEL,
+        location: "basement",
+        installedDate: "2018-06-01",
+        lastServicedDate: "2024-03-15",
+      })
+      .returning();
+
+    expect(row.location).toBe("basement");
+    expect(row.installedDate).toBe("2018-06-01");
+    expect(row.lastServicedDate).toBe("2024-03-15");
+  });
+});

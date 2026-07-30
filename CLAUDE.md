@@ -22,3 +22,12 @@ Read `docs/handoff-2026-07-26-farpost-rebuild-methodology-briefing.md` and `docs
 ## State as of 2026-07-26
 
 Nothing built yet. No OpenSpec setup, no proposal, no scaffold code. The next real step is a written plan (proposal + design doc, per the methodology above) — not jumping straight into scaffolding.
+
+## Sreditor
+
+This project uses [Sreditor](https://github.com/rgsamways/sreditor) to capture SR&ED-eligible work as it happens, alongside the OpenSpec propose/apply/archive workflow:
+
+- `sreditor init` -- run once, early, to record the project's stated goal, genuine technological uncertainty, and success criteria.
+- `sreditor probe <change-id>` -- optional, before implementing a draft change that feels genuinely uncertain; captures the uncertainty and alternatives you're weighing.
+- `sreditor reflect` -- append a dated revision to the anchor document as understanding evolves.
+- `sreditor judge` / `sreditor rollup` / `sreditor report` -- run later, retrospectively, to judge archived changes and produce a T661-shaped report.

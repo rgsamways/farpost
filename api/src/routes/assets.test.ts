@@ -120,6 +120,29 @@ describe("building assets routes", () => {
     expect(JSON.parse(updated.body).conditionStatus).toBe("needs_repair");
   });
 
+  it("lets an owner set location and lastServicedDate via PATCH", async () => {
+    const { app, building, ownerCookie } = await setUpOwnedBuilding();
+
+    const created = await app.inject({
+      method: "POST",
+      url: `/api/buildings/${building.id}/assets`,
+      headers: { cookie: ownerCookie },
+      payload: { assetType: "hvac" },
+    });
+    const asset = JSON.parse(created.body);
+
+    const updated = await app.inject({
+      method: "PATCH",
+      url: `/api/assets/${asset.id}`,
+      headers: { cookie: ownerCookie },
+      payload: { location: "basement", lastServicedDate: "2024-03-15" },
+    });
+    expect(updated.statusCode).toBe(200);
+    const body = JSON.parse(updated.body);
+    expect(body.location).toBe("basement");
+    expect(body.lastServicedDate).toBe("2024-03-15");
+  });
+
   it("forbids a non-owner from listing, adding, or updating assets", async () => {
     const { app, building, ownerCookie } = await setUpOwnedBuilding();
     const nonOwner = await signIn(app, NON_OWNER_EMAIL);

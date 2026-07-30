@@ -1,0 +1,31 @@
+{
+  "generatedAt": "2026-07-28T22:39:11.869Z",
+  "projects": [
+    {
+      "name": "Other judged, ungrouped work",
+      "contributingChangeIds": [
+        "2026-07-26-header-spacing-and-icon-alignment",
+        "2026-07-26-mobile-app-shell",
+        "2026-07-26-scaffold-desktop-framing",
+        "2026-07-26-settings-page",
+        "2026-07-27-billing-subscription-schema",
+        "2026-07-27-building-provenance-schema",
+        "2026-07-27-checklist-schema",
+        "2026-07-27-core-building-schema",
+        "2026-07-27-event-log-schema",
+        "2026-07-27-job-dispatch-schema",
+        "2026-07-27-notification-subscription",
+        "2026-07-27-scaffold-fastify-backend",
+        "2026-07-27-sign-in-and-account-pages",
+        "2026-07-27-systems-passport",
+        "2026-07-27-wire-better-auth",
+        "2026-07-28-systems-passport-dev-seed"
+      ],
+      "uncertainty": "No shared technological uncertainty identified; these changes did not group into a coherent SR&ED narrative with any other judged change.",
+      "investigation": "Not applicable — see individual judgment records in .sreditor/judgments.jsonl for each change's own reasoning.",
+      "advancement": "Not applicable.",
+      "confidence": "high",
+      "eligibleForFiling": false
+    }
+  ]
+}

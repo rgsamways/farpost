@@ -10,8 +10,10 @@ interface AssetBody {
   manufacturer?: string;
   model?: string;
   serialNumber?: string;
+  location?: string;
   warrantyExpiryDate?: string;
   installedDate?: string;
+  lastServicedDate?: string;
   conditionStatus?: string;
   photoUrls?: string[];
   conditionNotes?: string[];
@@ -27,8 +29,10 @@ const assetBodySchema = {
     manufacturer: { type: "string" },
     model: { type: "string" },
     serialNumber: { type: "string" },
+    location: { type: "string" },
     warrantyExpiryDate: { type: "string" },
     installedDate: { type: "string" },
+    lastServicedDate: { type: "string" },
     conditionStatus: { type: "string" },
     photoUrls: { type: "array", items: { type: "string" } },
     conditionNotes: { type: "array", items: { type: "string" } },
@@ -87,8 +91,10 @@ export async function assetsRoutes(fastify: FastifyInstance) {
           manufacturer: body.manufacturer,
           model: body.model,
           serialNumber: body.serialNumber,
+          location: body.location,
           warrantyExpiryDate: body.warrantyExpiryDate,
           installedDate: body.installedDate,
+          lastServicedDate: body.lastServicedDate,
           conditionStatus: body.conditionStatus,
           photoUrls: body.photoUrls,
           conditionNotes: body.conditionNotes,

@@ -1,11 +1,4 @@
-# asset-tracking
-
-## Purpose
-A polymorphic registry of trackable equipment/systems attached to a `Property`, `Building`, or
-`Unit` — not a rigid `building_id` foreign key, since e.g. a well or septic system can belong to a
-`Property` directly with no `Building` involved.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Asset Postgres table with polymorphic subject
 The system SHALL provide an `asset` table with fields: `id` (uuid, primary key), `subject_type`
@@ -17,9 +10,9 @@ code), `asset_type` (text, nullable), `label` (text, nullable), `manufacturer` (
 "basement", "attic", distinguishing multiple instances of the same asset type on one building),
 `warranty_expiry_date` (date, nullable), `installed_date` (date, nullable), `last_serviced_date`
 (date, nullable — distinct from `installed_date`; a system can be serviced repeatedly without
-being reinstalled), `condition_status` (text, nullable), `photo_urls`
-(text array, nullable), `condition_notes` (text array, nullable), `compliance` (jsonb, nullable),
-`created_at` (timestamptz, not null, default now).
+being reinstalled), `condition_status` (text, nullable), `photo_urls` (text array, nullable),
+`condition_notes` (text array, nullable), `compliance` (jsonb, nullable), `created_at`
+(timestamptz, not null, default now).
 
 #### Scenario: Asset can attach directly to a Property
 - **WHEN** an `asset` row is inserted with `subject_type = 'property'` and `subject_id` equal to
